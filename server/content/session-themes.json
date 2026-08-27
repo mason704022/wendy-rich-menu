@@ -1,0 +1,35 @@
+{
+  "weeks": [
+    {
+      "weekStart": "2026-08-24",
+      "title": "本週課程 · 美食",
+      "intro": "以簡化構圖與水彩上色為核心，週三、週五、週六同一主題，帶您用輕鬆步調記錄生活。",
+      "image": "/content/images/sessions/weekly-default.svg"
+    },
+    {
+      "weekStart": "2026-08-31",
+      "title": "美食",
+      "intro": "吃的",
+      "image": ""
+    },
+    {
+      "weekStart": "2026-09-07",
+      "title": "建築物",
+      "intro": "Bubu",
+      "image": ""
+    },
+    {
+      "weekStart": "2026-09-14",
+      "title": "成本",
+      "intro": "123",
+      "image": ""
+    },
+    {
+      "weekStart": "2026-09-21",
+      "title": "122",
+      "intro": "我們的",
+      "image": "/content/images/sessions/3febb52a-4564-4ac2-9cb9-415af60c7e33.webp"
+    }
+  ],
+  "overrides": []
+}

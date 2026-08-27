@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+.env
+liff/.env
+server/.env
+*.db
+.DS_Store
+server/credentials/
+*.plan.md
+.cursor/

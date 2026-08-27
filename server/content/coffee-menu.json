@@ -1,0 +1,10 @@
+{
+  "title": "選擇咖啡品項",
+  "items": [
+    { "id": "americano", "name": "美式咖啡", "description": "经典清爽" },
+    { "id": "latte", "name": "拿鐵咖啡", "description": "奶香溫潤" },
+    { "id": "pour-over", "name": "手沖單品", "description": "當日豆子" },
+    { "id": "cappuccino", "name": "卡布奇諾", "description": "綿密奶泡" },
+    { "id": "seasonal", "name": "季節限定", "description": "店內推薦" }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "wendy-line-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "create-rich-menu": "tsx src/scripts/create-rich-menu.ts",
+    "confirm-purchase": "tsx src/scripts/confirm-purchase.ts",
+    "list-purchases": "tsx src/scripts/list-purchases.ts",
+    "list-status": "tsx src/scripts/list-status.ts",
+    "sync-to-sheets": "tsx src/scripts/sync-to-sheets.ts",
+    "reset-member": "tsx src/scripts/reset-member.ts",
+    "edit-rich-menu": "tsx src/scripts/edit-rich-menu-image.ts",
+    "generate-rich-menu": "tsx src/scripts/generate-rich-menu-v2.ts",
+    "db:init": "tsx src/db/init.ts"
+  },
+  "dependencies": {
+    "@line/bot-sdk": "^9.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "googleapis": "^176.0.0",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

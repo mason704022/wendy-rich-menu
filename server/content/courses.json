@@ -1,0 +1,19 @@
+{
+  "title": "課程資訊",
+  "courseName": "Wendy 水彩風格課程",
+  "introduction": "以構圖簡化與水彩上色為核心，帶您用輕鬆步調記錄生活。每堂課程含畫具、畫紙，並附飲品一杯。",
+  "targetAudience": "12 歲以上",
+  "teachingMethod": "構圖簡化、水彩上色",
+  "features": "建築、街景、美食等主題",
+  "includes": "含畫具和畫紙，附飲品一杯",
+  "sessionRule": "有訂課才扣堂數；開課前 24 小時截止預約與取消",
+  "capacity": "每堂課最多 10 人，備取 2 人，達 5 人即開班",
+  "schedule": "每週三 09:00-11:00、週五 19:00-21:00、週六 09:00-11:00",
+  "duration": "每堂 2 小時",
+  "price": "詳見購買課程",
+  "venue": {
+    "name": "回咖啡",
+    "address": "新竹市東區",
+    "mapUrl": "https://maps.google.com/?q=回咖啡+新竹"
+  }
+}

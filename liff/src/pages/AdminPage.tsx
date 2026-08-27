@@ -1,0 +1,730 @@
+import { useEffect, useState } from "react";
+
+import { api } from "../lib/api";
+
+import { getProfile } from "../lib/liff";
+
+import { PageShell } from "../components/PageShell";
+import { AdminThemesPanel } from "../components/AdminThemesPanel";
+
+
+
+interface PendingPurchase {
+
+  id: number;
+
+  payer_name: string;
+
+  transfer_last5: string;
+
+  sessions_count: number;
+
+  amount: number;
+
+  created_at: string;
+
+  member_name: string;
+
+  member_phone: string;
+
+}
+
+
+
+interface SessionAttendee {
+
+  booking_id: number;
+
+  member_name: string;
+
+  member_phone: string;
+
+  status: string;
+
+  coffee_name: string;
+
+}
+
+
+
+interface BookingSession {
+
+  slot_date: string;
+
+  start_time: string;
+
+  end_time: string;
+
+  label: string;
+
+  confirmed_count: number;
+
+  waitlist_count: number;
+
+  total_count: number;
+
+  attendees: SessionAttendee[];
+
+}
+
+
+
+type Tab = "purchases" | "bookings" | "themes";
+
+
+
+export function AdminPage() {
+
+  const profile = getProfile();
+
+  const [tab, setTab] = useState<Tab>("purchases");
+
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
+
+  const [sheetsUrl, setSheetsUrl] = useState<string | null>(null);
+
+  const [purchases, setPurchases] = useState<PendingPurchase[]>([]);
+
+  const [sessions, setSessions] = useState<BookingSession[]>([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  const [success, setSuccess] = useState("");
+
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const [confirmPurchase, setConfirmPurchase] = useState<PendingPurchase | null>(null);
+
+  const [rejectPurchase, setRejectPurchase] = useState<PendingPurchase | null>(null);
+
+
+
+  const adminQuery = `lineUserId=${encodeURIComponent(profile.userId)}`;
+
+
+
+  async function loadData() {
+
+    setError("");
+
+    const [check, pending, sessionData] = await Promise.all([
+
+      api<{ ok: boolean; sheetsUrl: string | null }>(`/admin/check?${adminQuery}`),
+
+      api<{ purchases: PendingPurchase[] }>(`/admin/purchases/pending?${adminQuery}`),
+
+      api<{ sessions: BookingSession[] }>(
+
+        `/admin/bookings/sessions?days=28&${adminQuery}`
+
+      ),
+
+    ]);
+
+    setSheetsUrl(check.sheetsUrl);
+
+    setPurchases(pending.purchases);
+
+    setSessions(sessionData.sessions);
+
+  }
+
+
+
+  useEffect(() => {
+
+    api<{ ok: boolean; sheetsUrl: string | null }>(`/admin/check?${adminQuery}`)
+
+      .then((check) => {
+
+        setAuthorized(true);
+
+        setSheetsUrl(check.sheetsUrl);
+
+        return loadData();
+
+      })
+
+      .catch((err) => {
+
+        const msg = err instanceof Error ? err.message : "載入失敗";
+
+        if (msg === "FORBIDDEN" || msg.includes("403")) {
+
+          setAuthorized(false);
+
+        } else if (msg === "ADMIN_NOT_CONFIGURED" || msg.includes("503")) {
+
+          setError("後端尚未設定 ADMIN_LINE_USER_ID，請檢查 server/.env");
+
+        } else if (msg.includes("404") || msg.includes("API 不存在")) {
+
+          setError(
+            "無法連線管理 API（HTTP 404）。請確認：1) server 已重啟 2) ngrok 指向 port 3000 3) LIFF Endpoint URL 與 ngrok 網址一致 4) 已執行 cd liff && npm run build"
+          );
+
+        } else {
+
+          setError(msg);
+
+        }
+
+      })
+
+      .finally(() => setLoading(false));
+
+  }, [profile.userId]);
+
+
+
+  async function confirmPurchaseAction() {
+
+    if (!confirmPurchase) return;
+
+    setActionLoading(true);
+
+    setError("");
+
+    setSuccess("");
+
+    try {
+
+      await api(`/admin/purchases/${confirmPurchase.id}/confirm`, {
+
+        method: "POST",
+
+        body: JSON.stringify({ lineUserId: profile.userId }),
+
+      });
+
+      setSuccess(`訂單 #${confirmPurchase.id} 已確認`);
+
+      setConfirmPurchase(null);
+
+      await loadData();
+
+    } catch (err) {
+
+      setError(err instanceof Error ? err.message : "確認失敗");
+
+    } finally {
+
+      setActionLoading(false);
+
+    }
+
+  }
+
+
+
+  async function rejectPurchaseAction() {
+
+    if (!rejectPurchase) return;
+
+    setActionLoading(true);
+
+    setError("");
+
+    setSuccess("");
+
+    try {
+
+      await api(`/admin/purchases/${rejectPurchase.id}/reject`, {
+
+        method: "POST",
+
+        body: JSON.stringify({ lineUserId: profile.userId }),
+
+      });
+
+      setSuccess(`訂單 #${rejectPurchase.id} 已拒絕`);
+
+      setRejectPurchase(null);
+
+      await loadData();
+
+    } catch (err) {
+
+      setError(err instanceof Error ? err.message : "操作失敗");
+
+    } finally {
+
+      setActionLoading(false);
+
+    }
+
+  }
+
+
+
+  if (loading) {
+
+    return <div className="loading">載入中…</div>;
+
+  }
+
+
+
+  if (authorized === false) {
+
+    return (
+
+      <PageShell title="管理後台" leftAlign showMemberLink={false}>
+
+        <div className="error-box">您沒有管理權限</div>
+
+      </PageShell>
+
+    );
+
+  }
+
+
+
+  return (
+
+    <PageShell title="管理後台" leftAlign showMemberLink={false}>
+
+      {error && <div className="error-box">{error}</div>}
+
+      {success && <div className="success-box">{success}</div>}
+
+
+
+      <div className="admin-tabs">
+
+        <button
+
+          type="button"
+
+          className={`admin-tab ${tab === "purchases" ? "active" : ""}`}
+
+          onClick={() => setTab("purchases")}
+
+        >
+
+          待確認匯款
+
+          {purchases.length > 0 && <span className="admin-badge">{purchases.length}</span>}
+
+        </button>
+
+        <button
+
+          type="button"
+
+          className={`admin-tab ${tab === "bookings" ? "active" : ""}`}
+
+          onClick={() => setTab("bookings")}
+
+        >
+
+          課程名單
+
+        </button>
+
+        <button
+
+          type="button"
+
+          className={`admin-tab ${tab === "themes" ? "active" : ""}`}
+
+          onClick={() => setTab("themes")}
+
+        >
+
+          課程主題
+
+        </button>
+
+      </div>
+
+
+
+      {tab === "purchases" && (
+
+        <section className="info-card">
+
+          {purchases.length === 0 && <p>目前沒有待確認匯款</p>}
+
+          {purchases.map((p) => (
+
+            <div className="slot-card" key={p.id}>
+
+              <h3>訂單 #{p.id}</h3>
+
+              <p className="slot-meta">
+
+                會員：{p.member_name} · {p.member_phone}
+
+              </p>
+
+              <p className="slot-meta">
+
+                匯款人：{p.payer_name} · 後五碼 {p.transfer_last5}
+
+              </p>
+
+              <p className="slot-meta">
+
+                {p.sessions_count} 堂 · ${p.amount.toLocaleString()}
+
+              </p>
+
+              <p className="slot-meta">通知時間：{p.created_at}</p>
+
+              <div className="admin-actions">
+
+                <button
+
+                  type="button"
+
+                  className="btn btn-purple"
+
+                  onClick={() => setConfirmPurchase(p)}
+
+                >
+
+                  確認匯款
+
+                </button>
+
+                <button
+
+                  type="button"
+
+                  className="btn btn-outline"
+
+                  onClick={() => setRejectPurchase(p)}
+
+                >
+
+                  拒絕
+
+                </button>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </section>
+
+      )}
+
+
+
+      {tab === "bookings" && (
+
+        <section className="info-card">
+
+          {sessions.length === 0 && <p>近四週沒有預約</p>}
+
+          {sessions.map((session) => (
+
+            <div
+
+              className="slot-card admin-session-card"
+
+              key={`${session.slot_date}-${session.start_time}`}
+
+            >
+
+              <h3>
+
+                {session.slot_date}（{session.label}）{session.start_time}-
+
+                {session.end_time}
+
+              </h3>
+
+              <p className="slot-meta">
+
+                正取 {session.confirmed_count} 人 · 備取 {session.waitlist_count} 人 · 共{" "}
+
+                {session.total_count} 人
+
+              </p>
+
+              <ul className="admin-roster">
+
+                {session.attendees.map((a) => (
+
+                  <li key={a.booking_id}>
+
+                    <strong>{a.member_name}</strong>
+
+                    <span className="slot-meta">
+
+                      {a.status === "waitlist" ? "備取" : "正取"}
+
+                      {a.coffee_name && ` · ${a.coffee_name}`}
+
+                    </span>
+
+                  </li>
+
+                ))}
+
+              </ul>
+
+            </div>
+
+          ))}
+
+        </section>
+
+      )}
+
+
+
+      {tab === "themes" && (
+
+        <AdminThemesPanel
+
+          adminQuery={adminQuery}
+
+          lineUserId={profile.userId}
+
+          onMessage={({ error: err, success: ok }) => {
+
+            if (err) {
+
+              setError(err);
+
+              setSuccess("");
+
+            } else if (ok) {
+
+              setSuccess(ok);
+
+              setError("");
+
+            } else {
+
+              setError("");
+
+              setSuccess("");
+
+            }
+
+          }}
+
+        />
+
+      )}
+
+
+
+      {sheetsUrl && (
+
+        <p className="admin-sheets-link">
+
+          <a href={sheetsUrl} target="_blank" rel="noreferrer">
+
+            在 Google Sheet 查看完整資料
+
+          </a>
+
+        </p>
+
+      )}
+
+
+
+      {confirmPurchase && (
+
+        <div
+
+          className="sheet-overlay"
+
+          onClick={() => !actionLoading && setConfirmPurchase(null)}
+
+        >
+
+          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
+
+            <div className="sheet-header">
+
+              <button
+
+                type="button"
+
+                className="sheet-close-btn"
+
+                disabled={actionLoading}
+
+                onClick={() => setConfirmPurchase(null)}
+
+              >
+
+                關閉
+
+              </button>
+
+              <h2 className="sheet-title">確認匯款</h2>
+
+            </div>
+
+            <div className="sheet-body">
+
+              <p className="sheet-intro">確定要確認以下匯款嗎？</p>
+
+              <div className="slot-card">
+
+                <h3>訂單 #{confirmPurchase.id}</h3>
+
+                <p className="slot-meta">
+
+                  {confirmPurchase.member_name} · 後五碼 {confirmPurchase.transfer_last5}
+
+                </p>
+
+                <p className="slot-meta">
+
+                  {confirmPurchase.sessions_count} 堂 · $
+
+                  {confirmPurchase.amount.toLocaleString()}
+
+                </p>
+
+              </div>
+
+            </div>
+
+            <div className="sheet-footer confirm-cancel-footer">
+
+              <button
+
+                type="button"
+
+                className="btn btn-outline btn-lg"
+
+                disabled={actionLoading}
+
+                onClick={() => setConfirmPurchase(null)}
+
+              >
+
+                返回
+
+              </button>
+
+              <button
+
+                type="button"
+
+                className="btn btn-purple btn-lg"
+
+                disabled={actionLoading}
+
+                onClick={confirmPurchaseAction}
+
+              >
+
+                {actionLoading ? "處理中…" : "確認"}
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
+      {rejectPurchase && (
+
+        <div
+
+          className="sheet-overlay"
+
+          onClick={() => !actionLoading && setRejectPurchase(null)}
+
+        >
+
+          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
+
+            <div className="sheet-header">
+
+              <button
+
+                type="button"
+
+                className="sheet-close-btn"
+
+                disabled={actionLoading}
+
+                onClick={() => setRejectPurchase(null)}
+
+              >
+
+                關閉
+
+              </button>
+
+              <h2 className="sheet-title">拒絕匯款</h2>
+
+            </div>
+
+            <div className="sheet-body">
+
+              <p className="sheet-intro">確定要拒絕訂單 #{rejectPurchase.id} 嗎？</p>
+
+            </div>
+
+            <div className="sheet-footer confirm-cancel-footer">
+
+              <button
+
+                type="button"
+
+                className="btn btn-outline btn-lg"
+
+                disabled={actionLoading}
+
+                onClick={() => setRejectPurchase(null)}
+
+              >
+
+                返回
+
+              </button>
+
+              <button
+
+                type="button"
+
+                className="btn btn-purple btn-lg"
+
+                disabled={actionLoading}
+
+                onClick={rejectPurchaseAction}
+
+              >
+
+                {actionLoading ? "處理中…" : "確認拒絕"}
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+    </PageShell>
+
+  );
+
+}
+
+

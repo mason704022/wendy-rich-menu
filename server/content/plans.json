@@ -1,0 +1,26 @@
+{
+  "categories": [
+    {
+      "id": "packages",
+      "label": "課程方案",
+      "plans": [
+        {
+          "id": "pack-5",
+          "name": "5 堂課程",
+          "description": "每堂 2 小時，適合初次體驗",
+          "durationLabel": "5 堂 × 2 小時",
+          "sessionsCount": 5,
+          "price": 3800
+        },
+        {
+          "id": "pack-8",
+          "name": "8 堂課程",
+          "description": "每堂 2 小時，超值方案",
+          "durationLabel": "8 堂 × 2 小時",
+          "sessionsCount": 8,
+          "price": 5600
+        }
+      ]
+    }
+  ]
+}

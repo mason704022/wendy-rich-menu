@@ -55,7 +55,7 @@ app.get(/^(?!\/api)(?!\/content).*/, (_req, res) => {
   });
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   const sheetsOk = isGoogleSheetsConfigured();
   console.log(`Wendy LINE API listening on http://localhost:${port}`);
   console.log(

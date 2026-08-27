@@ -3,6 +3,20 @@
 ## 前置
 
 - [ ] 專案已在 GitHub（不含 `.env`、`credentials/`、`*.db`）
+
+### 首次推送 GitHub
+
+若本機尚未 commit：
+
+```bash
+git init
+git add -A
+git commit -m "Initial commit"
+gh repo create wendy-rich-menu --private --source=. --push
+```
+
+（需先設定 git user.name / user.email，並登入 `gh auth login`）
+
 - [ ] 新 LINE OA 憑證已準備（見 [`LINE_ACCOUNT_MIGRATION.md`](LINE_ACCOUNT_MIGRATION.md)）
 
 ## 建立專案

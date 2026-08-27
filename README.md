@@ -86,9 +86,12 @@ npm run confirm-purchase -- 1
 
 **正式上線 + 換新 LINE 官方帳號**（建議順序）：
 
-1. [`docs/LINE_ACCOUNT_MIGRATION.md`](docs/LINE_ACCOUNT_MIGRATION.md) — 完整 SOP
+1. [`docs/LINE_ACCOUNT_MIGRATION.md`](docs/LINE_ACCOUNT_MIGRATION.md) — 完整 SOP（Phase 1–7）
 2. [`docs/RAILWAY_CHECKLIST.md`](docs/RAILWAY_CHECKLIST.md) — Railway Volume 與變數
-3. [`docs/DEPLOY.md`](docs/DEPLOY.md) — 部署概覽
+3. [`scripts/railway-env.template.env`](scripts/railway-env.template.env) — Railway Variables 範本
+4. [`docs/DEPLOY.md`](docs/DEPLOY.md) — 部署概覽
+
+GitHub：`https://github.com/mason704022/wendy-rich-menu`（連接 Railway 部署）
 
 部署後驗證：
 

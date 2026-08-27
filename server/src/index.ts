@@ -55,9 +55,9 @@ app.get(/^(?!\/api)(?!\/content).*/, (_req, res) => {
   });
 });
 
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, "::", () => {
   const sheetsOk = isGoogleSheetsConfigured();
-  console.log(`Wendy LINE API listening on http://localhost:${port}`);
+  console.log(`Wendy LINE API listening on [::]:${port}`);
   console.log(
     sheetsOk
       ? "[Google Sheets] Sync enabled"

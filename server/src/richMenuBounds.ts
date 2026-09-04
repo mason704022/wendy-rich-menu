@@ -15,8 +15,10 @@ const TOP_LEFT_W = COL_W * 2 + G;
 const TOP_RIGHT_X = G + TOP_LEFT_W + G;
 
 export const RICH_MENU_BOUNDS = {
-  /** ② IG — 大圖右上角 */
-  ig: { x: TOP_LEFT_W - 180, y: G + 20, width: 160, height: 160 },
+  /** ① 左上 — Instagram */
+  igLeft: { x: G, y: G, width: COL_W, height: TOP_H },
+  /** ② 右上（上排左區）— Instagram */
+  igRight: { x: G + COL_W + G, y: G, width: COL_W, height: TOP_H },
   /** ③ 課程資訊 */
   courses: { x: TOP_RIGHT_X, y: G, width: COL_W, height: TOP_H },
   /** ④ 購買課程 */

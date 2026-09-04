@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PageShell } from "./PageShell";
 import { PaymentConfirmSheet } from "./PaymentConfirmSheet";
+import { CouponPicker, type AvailableCoupon, type PricePreview } from "./CouponPicker";
 
 export interface Plan {
   id: string;
@@ -33,6 +34,11 @@ interface Props {
   loading: boolean;
   onBack: () => void;
   defaultPayerName?: string;
+  coupons?: AvailableCoupon[];
+  selectedCouponId?: number | null;
+  onSelectCoupon?: (id: number | null) => void;
+  pricePreview?: PricePreview | null;
+  couponLoading?: boolean;
 }
 
 export function PlanSelector({
@@ -44,10 +50,18 @@ export function PlanSelector({
   loading,
   onBack,
   defaultPayerName = "",
+  coupons = [],
+  selectedCouponId = null,
+  onSelectCoupon,
+  pricePreview = null,
+  couponLoading = false,
 }: Props) {
   const selectedPlan = categories
     .flatMap((c) => c.plans)
     .find((p) => p.id === selectedPlanId);
+
+  const displayPrice = pricePreview?.final ?? selectedPlan?.price ?? 0;
+  const hasDiscount = (pricePreview?.discount ?? 0) > 0;
 
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? "");
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -98,6 +112,16 @@ export function PlanSelector({
           })}
       </div>
 
+      {selectedPlan && onSelectCoupon && (
+        <CouponPicker
+          coupons={coupons}
+          selectedCouponId={selectedCouponId}
+          onSelectCoupon={onSelectCoupon}
+          pricePreview={pricePreview}
+          loading={couponLoading}
+        />
+      )}
+
       {selectedPlan && (
         <section className="payment-card">
           <h3>匯款資訊</h3>
@@ -117,7 +141,16 @@ export function PlanSelector({
             <div>
               <dt>金額</dt>
               <dd>
-                NT$ {selectedPlan.price.toLocaleString()}（{selectedPlan.sessionsCount} 堂）
+                {hasDiscount ? (
+                  <>
+                    <span className="price-original">NT$ {selectedPlan.price.toLocaleString()}</span>
+                    {" → "}
+                    <strong>NT$ {displayPrice.toLocaleString()}</strong>
+                  </>
+                ) : (
+                  <>NT$ {displayPrice.toLocaleString()}</>
+                )}
+                （{selectedPlan.sessionsCount} 堂）
               </dd>
             </div>
           </dl>
@@ -131,7 +164,10 @@ export function PlanSelector({
             <>
               <span>
                 已選 1 項 / {selectedPlan.sessionsCount} 堂 / NT$
-                {selectedPlan.price.toLocaleString()}
+                {displayPrice.toLocaleString()}
+                {hasDiscount && (
+                  <span className="plan-summary-discount">（已折扣）</span>
+                )}
               </span>
               <button
                 type="button"

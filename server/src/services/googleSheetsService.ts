@@ -5,6 +5,7 @@ import type { Booking } from "./bookingService.js";
 import { getCoffeeItem } from "./coffeeMenuService.js";
 import { getMember } from "./memberService.js";
 import type { Purchase } from "./purchaseService.js";
+import { getCouponNameForPurchase } from "./couponService.js";
 
 const BOOKING_HEADERS = [
   "預約編號",
@@ -26,7 +27,10 @@ const PURCHASE_HEADERS = [
   "匯款人",
   "後五碼",
   "堂數",
-  "金額",
+  "原價",
+  "折扣",
+  "實付金額",
+  "折扣券",
   "狀態",
   "建立時間",
   "確認時間",
@@ -100,6 +104,8 @@ function bookingToRow(booking: Booking): string[] {
 
 function purchaseToRow(purchase: Purchase): string[] {
   const member = getMember(purchase.line_user_id);
+  const original = purchase.original_amount ?? purchase.amount;
+  const couponName = getCouponNameForPurchase(purchase.coupon_assignment_id);
 
   return [
     String(purchase.id),
@@ -108,7 +114,10 @@ function purchaseToRow(purchase: Purchase): string[] {
     purchase.payer_name,
     purchase.transfer_last5,
     String(purchase.sessions_count),
+    String(original),
+    String(purchase.discount_amount ?? 0),
     String(purchase.amount),
+    couponName,
     purchaseStatusLabel(purchase.status),
     purchase.created_at,
     purchase.confirmed_at ?? "",
@@ -120,7 +129,7 @@ async function ensureHeaders(tab: string, headers: string[]): Promise<void> {
   const { googleSheetsSpreadsheetId } = getConfig();
   if (!sheets || !googleSheetsSpreadsheetId) return;
 
-  const range = `${tab}!A1:J1`;
+  const range = `${tab}!A1:M1`;
   const existing = await sheets.spreadsheets.values.get({
     spreadsheetId: googleSheetsSpreadsheetId,
     range,
@@ -169,7 +178,7 @@ async function upsertRow(tab: string, headers: string[], row: string[]): Promise
   if (existingRow) {
     await sheets.spreadsheets.values.update({
       spreadsheetId: googleSheetsSpreadsheetId,
-      range: `${tab}!A${existingRow}:J${existingRow}`,
+      range: `${tab}!A${existingRow}:M${existingRow}`,
       valueInputOption: "RAW",
       requestBody: { values: [row] },
     });
@@ -178,7 +187,7 @@ async function upsertRow(tab: string, headers: string[], row: string[]): Promise
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: googleSheetsSpreadsheetId,
-    range: `${tab}!A:J`,
+    range: `${tab}!A:M`,
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [row] },

@@ -66,6 +66,33 @@ export function initDatabase(dbPath = getDbPath()) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_otp_phone ON otp_codes(phone);
+
+    CREATE TABLE IF NOT EXISTS coupon_templates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      discount_type TEXT NOT NULL CHECK(discount_type IN ('fixed', 'percent')),
+      discount_value INTEGER NOT NULL,
+      plan_ids TEXT NOT NULL DEFAULT '[]',
+      expires_at TEXT,
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS coupon_assignments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      template_id INTEGER NOT NULL,
+      line_user_id TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('available', 'reserved', 'used', 'expired')),
+      assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+      used_at TEXT,
+      purchase_id INTEGER,
+      FOREIGN KEY (template_id) REFERENCES coupon_templates(id),
+      FOREIGN KEY (line_user_id) REFERENCES members(line_user_id),
+      FOREIGN KEY (purchase_id) REFERENCES purchases(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_coupon_assignments_user
+      ON coupon_assignments(line_user_id, status);
   `);
 
   migrateSchema(db);
@@ -87,6 +114,17 @@ function migrateSchema(db: DatabaseSync) {
   const bookingNames = new Set(bookingCols.map((c) => c.name));
   if (!bookingNames.has("coffee_item_id")) {
     db.exec(`ALTER TABLE bookings ADD COLUMN coffee_item_id TEXT NOT NULL DEFAULT ''`);
+  }
+
+  if (!names.has("original_amount")) {
+    db.exec(`ALTER TABLE purchases ADD COLUMN original_amount INTEGER`);
+    db.exec(`UPDATE purchases SET original_amount = amount WHERE original_amount IS NULL`);
+  }
+  if (!names.has("discount_amount")) {
+    db.exec(`ALTER TABLE purchases ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!names.has("coupon_assignment_id")) {
+    db.exec(`ALTER TABLE purchases ADD COLUMN coupon_assignment_id INTEGER`);
   }
 }
 

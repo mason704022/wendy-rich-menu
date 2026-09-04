@@ -1,9 +1,19 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getConfig } from "../config.js";
+import { getConfig, liffUrl } from "../config.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { notifyUser } from "../lineClient.js";
 import { listBookingSessionsForAdmin } from "../services/bookingService.js";
+import {
+  assignToMember,
+  buildCouponAssignedMessage,
+  createTemplate,
+  getTemplate,
+  listAssignments,
+  listTemplates,
+  revokeAssignment,
+} from "../services/couponService.js";
+import { searchMembers } from "../services/memberService.js";
 import { isGoogleSheetsConfigured } from "../services/googleSheetsService.js";
 import {
   confirmPurchase,
@@ -225,4 +235,100 @@ adminRouter.post("/session-themes/upload-image", async (req, res) => {
     const status = message === "IMAGE_TOO_LARGE" ? 413 : 400;
     res.status(status).json({ error: message });
   }
+});
+
+adminRouter.get("/coupons/templates", (_req, res) => {
+  res.json({ templates: listTemplates() });
+});
+
+adminRouter.post("/coupons/templates", (req, res) => {
+  const schema = z.object({
+    name: z.string().min(1).max(80),
+    discountType: z.enum(["fixed", "percent"]),
+    discountValue: z.number().int().positive(),
+    planIds: z.array(z.string()).optional(),
+    expiresAt: z.string().nullable().optional(),
+    note: z.string().max(200).optional(),
+  });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+  if (parsed.data.discountType === "percent" && parsed.data.discountValue > 100) {
+    return res.status(400).json({ error: "PERCENT_TOO_HIGH" });
+  }
+
+  const template = createTemplate({
+    name: parsed.data.name,
+    discountType: parsed.data.discountType,
+    discountValue: parsed.data.discountValue,
+    planIds: parsed.data.planIds,
+    expiresAt: parsed.data.expiresAt,
+    note: parsed.data.note,
+  });
+  res.status(201).json({ template });
+});
+
+adminRouter.get("/coupons/assignments", (req, res) => {
+  const status = req.query.status;
+  const lineUserId = req.query.lineUserId;
+  const assignments = listAssignments({
+    status:
+      status === "available" ||
+      status === "reserved" ||
+      status === "used" ||
+      status === "expired"
+        ? status
+        : undefined,
+    lineUserId: typeof lineUserId === "string" ? lineUserId : undefined,
+  });
+  res.json({ assignments });
+});
+
+adminRouter.post("/coupons/assignments", async (req, res) => {
+  const schema = z.object({
+    templateId: z.number().int().positive(),
+    lineUserId: z.string().min(1),
+  });
+  const parsed = schema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  try {
+    const assignment = assignToMember(parsed.data.templateId, parsed.data.lineUserId);
+    const template = getTemplate(parsed.data.templateId);
+    res.status(201).json({ assignment });
+
+    if (template) {
+      const purchasePageUrl = liffUrl("purchase");
+      const message = buildCouponAssignedMessage(template, purchasePageUrl);
+      void notifyUser(parsed.data.lineUserId, message).catch((notifyError) => {
+        console.error("[Coupon assign notify failed]", notifyError);
+      });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN";
+    res.status(400).json({ error: message });
+  }
+});
+
+adminRouter.delete("/coupons/assignments/:id", (req, res) => {
+  try {
+    revokeAssignment(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN";
+    res.status(400).json({ error: message });
+  }
+});
+
+adminRouter.get("/members/search", (req, res) => {
+  const q = typeof req.query.q === "string" ? req.query.q : "";
+  const onlyWithPurchase = req.query.onlyWithPurchase === "true";
+  const members = searchMembers(q, onlyWithPurchase).map((m) => ({
+    ...m,
+    has_confirmed_purchase: Boolean(m.has_confirmed_purchase),
+  }));
+  res.json({ members });
 });

@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { api, apiOptional } from "../lib/api";
 import { closeLiff, getProfile } from "../lib/liff";
 import { LoadError, apiErrorMessage } from "../components/LoadError";
-import { PlanSelector, type PlanCategory, type PaymentInfo } from "../components/PlanSelector";
+import {
+  PlanSelector,
+  type PlanCategory,
+  type PaymentInfo,
+} from "../components/PlanSelector";
+import type { AvailableCoupon, PricePreview } from "../components/CouponPicker";
 import { PurchaseLanding } from "../components/PurchaseLanding";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
 
@@ -23,6 +28,10 @@ export function PurchasePage() {
   const [payment, setPayment] = useState<PaymentInfo | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [defaultPayerName, setDefaultPayerName] = useState("");
+  const [coupons, setCoupons] = useState<AvailableCoupon[]>([]);
+  const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
+  const [pricePreview, setPricePreview] = useState<PricePreview | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -63,6 +72,45 @@ export function PurchasePage() {
     );
   }, [registered, profile.userId]);
 
+  useEffect(() => {
+    if (!registered || !selectedPlanId) {
+      setCoupons([]);
+      return;
+    }
+    api<{ coupons: AvailableCoupon[] }>(
+      `/purchases/coupons/${profile.userId}?planId=${encodeURIComponent(selectedPlanId)}`
+    )
+      .then((res) => {
+        setCoupons(res.coupons);
+        setSelectedCouponId((prev) =>
+          prev && res.coupons.some((c) => c.id === prev) ? prev : null
+        );
+      })
+      .catch(() => setCoupons([]));
+  }, [registered, profile.userId, selectedPlanId]);
+
+  useEffect(() => {
+    if (!selectedCouponId || !selectedPlanId) {
+      setPricePreview(null);
+      return;
+    }
+    setCouponLoading(true);
+    api<{ preview: PricePreview }>("/purchases/coupons/preview", {
+      method: "POST",
+      body: JSON.stringify({
+        lineUserId: profile.userId,
+        planId: selectedPlanId,
+        couponAssignmentId: selectedCouponId,
+      }),
+    })
+      .then((res) => setPricePreview(res.preview))
+      .catch(() => {
+        setPricePreview(null);
+        setSelectedCouponId(null);
+      })
+      .finally(() => setCouponLoading(false));
+  }, [selectedCouponId, selectedPlanId, profile.userId]);
+
   if (registered === null || initialLoading) {
     return <div className="loading">載入中…</div>;
   }
@@ -94,14 +142,18 @@ export function PurchasePage() {
     setError("");
     try {
       const p = getProfile();
+      const body: Record<string, unknown> = {
+        lineUserId: p.userId,
+        planId: selectedPlanId,
+        payerName: data.payerName,
+        transferLast5: data.transferLast5,
+      };
+      if (selectedCouponId) {
+        body.couponAssignmentId = selectedCouponId;
+      }
       const res = await api<{ purchase: { id: number } }>("/purchases/", {
         method: "POST",
-        body: JSON.stringify({
-          lineUserId: p.userId,
-          planId: selectedPlanId,
-          payerName: data.payerName,
-          transferLast5: data.transferLast5,
-        }),
+        body: JSON.stringify(body),
       });
       setOrderId(res.purchase.id);
       setDone(true);
@@ -150,11 +202,20 @@ export function PurchasePage() {
           categories={categories}
           payment={payment}
           selectedPlanId={selectedPlanId}
-          onSelectPlan={(id) => setSelectedPlanId(id || null)}
+          onSelectPlan={(id) => {
+            setSelectedPlanId(id || null);
+            setSelectedCouponId(null);
+            setPricePreview(null);
+          }}
           onSubmit={submitPayment}
           loading={loading}
           onBack={() => setView("landing")}
           defaultPayerName={defaultPayerName}
+          coupons={coupons}
+          selectedCouponId={selectedCouponId}
+          onSelectCoupon={setSelectedCouponId}
+          pricePreview={pricePreview}
+          couponLoading={couponLoading}
         />
       </>
     );

@@ -6,6 +6,7 @@ import { getProfile } from "../lib/liff";
 
 import { PageShell } from "../components/PageShell";
 import { AdminThemesPanel } from "../components/AdminThemesPanel";
+import { AdminCouponsPanel } from "../components/AdminCouponsPanel";
 
 
 
@@ -20,6 +21,12 @@ interface PendingPurchase {
   sessions_count: number;
 
   amount: number;
+
+  original_amount: number | null;
+
+  discount_amount: number;
+
+  coupon_name?: string;
 
   created_at: string;
 
@@ -69,7 +76,7 @@ interface BookingSession {
 
 
 
-type Tab = "purchases" | "bookings" | "themes";
+type Tab = "purchases" | "bookings" | "themes" | "coupons";
 
 
 
@@ -339,6 +346,20 @@ export function AdminPage() {
 
         </button>
 
+        <button
+
+          type="button"
+
+          className={`admin-tab ${tab === "coupons" ? "active" : ""}`}
+
+          onClick={() => setTab("coupons")}
+
+        >
+
+          折扣券
+
+        </button>
+
       </div>
 
 
@@ -369,9 +390,23 @@ export function AdminPage() {
 
               <p className="slot-meta">
 
-                {p.sessions_count} 堂 · ${p.amount.toLocaleString()}
+                {p.sessions_count} 堂 · 實付 NT${p.amount.toLocaleString()}
 
               </p>
+
+              {(p.discount_amount ?? 0) > 0 && (
+
+                <p className="slot-meta coupon-order-discount">
+
+                  原價 NT${(p.original_amount ?? p.amount).toLocaleString()} → 折 NT$
+
+                  {p.discount_amount.toLocaleString()}
+
+                  {p.coupon_name ? ` · ${p.coupon_name}` : ""}
+
+                </p>
+
+              )}
 
               <p className="slot-meta">通知時間：{p.created_at}</p>
 
@@ -519,6 +554,42 @@ export function AdminPage() {
 
 
 
+      {tab === "coupons" && (
+
+        <AdminCouponsPanel
+
+          adminQuery={adminQuery}
+
+          onMessage={({ error: err, success: ok }) => {
+
+            if (err) {
+
+              setError(err);
+
+              setSuccess("");
+
+            } else if (ok) {
+
+              setSuccess(ok);
+
+              setError("");
+
+            } else {
+
+              setError("");
+
+              setSuccess("");
+
+            }
+
+          }}
+
+        />
+
+      )}
+
+
+
       {sheetsUrl && (
 
         <p className="admin-sheets-link">
@@ -585,11 +656,31 @@ export function AdminPage() {
 
                 <p className="slot-meta">
 
-                  {confirmPurchase.sessions_count} 堂 · $
+                  {confirmPurchase.sessions_count} 堂 · 實付 NT$
 
                   {confirmPurchase.amount.toLocaleString()}
 
                 </p>
+
+                {(confirmPurchase.discount_amount ?? 0) > 0 && (
+
+                  <p className="slot-meta">
+
+                    原價 NT$
+
+                    {(confirmPurchase.original_amount ?? confirmPurchase.amount).toLocaleString()}{" "}
+
+                    → 折 NT${confirmPurchase.discount_amount.toLocaleString()}
+
+                    {confirmPurchase.coupon_name
+
+                      ? ` · ${confirmPurchase.coupon_name}`
+
+                      : ""}
+
+                  </p>
+
+                )}
 
               </div>
 

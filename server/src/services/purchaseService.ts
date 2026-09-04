@@ -1,4 +1,9 @@
 import { getDb } from "../db/index.js";
+import {
+  markUsedByPurchase,
+  releaseByPurchase,
+  reserveForPurchase,
+} from "./couponService.js";
 import { addSessions } from "./memberService.js";
 import { syncPurchaseToSheetSafe } from "./googleSheetsService.js";
 import { getMember } from "./memberService.js";
@@ -8,6 +13,9 @@ export interface Purchase {
   line_user_id: string;
   sessions_count: number;
   amount: number;
+  original_amount: number | null;
+  discount_amount: number;
+  coupon_assignment_id: number | null;
   status: "pending" | "confirmed" | "rejected";
   payer_name: string;
   transfer_last5: string;
@@ -18,39 +26,70 @@ export interface Purchase {
 export interface PurchaseWithMember extends Purchase {
   member_name: string;
   member_phone: string;
+  coupon_name?: string;
 }
+
 export function createPurchase(input: {
   lineUserId: string;
   sessionsCount: number;
   amount: number;
+  originalAmount?: number;
+  discountAmount?: number;
+  couponAssignmentId?: number | null;
   payerName?: string;
   transferLast5?: string;
 }): Purchase {
   const db = getDb();
+  const originalAmount = input.originalAmount ?? input.amount;
+  const discountAmount = input.discountAmount ?? 0;
+
   const result = db
     .prepare(
-      `INSERT INTO purchases (line_user_id, sessions_count, amount, status, payer_name, transfer_last5)
-       VALUES (?, ?, ?, 'pending', ?, ?)`
+      `INSERT INTO purchases (
+         line_user_id, sessions_count, amount, original_amount, discount_amount,
+         coupon_assignment_id, status, payer_name, transfer_last5
+       )
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
     )
     .run(
       input.lineUserId,
       input.sessionsCount,
       input.amount,
+      originalAmount,
+      discountAmount,
+      input.couponAssignmentId ?? null,
       input.payerName ?? "",
       input.transferLast5 ?? ""
     );
 
   const purchase = getPurchase(Number(result.lastInsertRowid))!;
+
+  if (input.couponAssignmentId) {
+    reserveForPurchase(input.couponAssignmentId, purchase.id);
+  }
+
   syncPurchaseToSheetSafe(purchase);
   return purchase;
 }
 
 function enrichPurchase(purchase: Purchase): PurchaseWithMember {
   const member = getMember(purchase.line_user_id);
+  let coupon_name = "";
+  if (purchase.coupon_assignment_id) {
+    const row = getDb()
+      .prepare(
+        `SELECT ct.name FROM coupon_assignments ca
+         JOIN coupon_templates ct ON ct.id = ca.template_id
+         WHERE ca.id = ?`
+      )
+      .get(purchase.coupon_assignment_id) as { name: string } | undefined;
+    coupon_name = row?.name ?? "";
+  }
   return {
     ...purchase,
     member_name: member?.name ?? "",
     member_phone: member?.phone ?? "",
+    coupon_name,
   };
 }
 
@@ -72,6 +111,9 @@ export function confirmPurchase(id: number): Purchase {
   ).run(id);
 
   addSessions(purchase.line_user_id, purchase.sessions_count);
+  if (purchase.coupon_assignment_id) {
+    markUsedByPurchase(id);
+  }
   const updated = getPurchase(id)!;
   syncPurchaseToSheetSafe(updated);
   return updated;
@@ -79,7 +121,13 @@ export function confirmPurchase(id: number): Purchase {
 
 export function rejectPurchase(id: number): Purchase {
   const db = getDb();
+  const purchase = getPurchase(id);
+  if (!purchase) throw new Error("PURCHASE_NOT_FOUND");
+
   db.prepare(`UPDATE purchases SET status = 'rejected' WHERE id = ?`).run(id);
+  if (purchase.coupon_assignment_id) {
+    releaseByPurchase(id);
+  }
   const updated = getPurchase(id)!;
   syncPurchaseToSheetSafe(updated);
   return updated;

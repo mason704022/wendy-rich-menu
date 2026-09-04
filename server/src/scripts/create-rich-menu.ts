@@ -59,7 +59,11 @@ async function main() {
     chatBarText: "選單",
     areas: [
       {
-        bounds: RICH_MENU_BOUNDS.ig,
+        bounds: RICH_MENU_BOUNDS.igLeft,
+        action: { type: "uri" as const, label: "Instagram", uri: igUrl },
+      },
+      {
+        bounds: RICH_MENU_BOUNDS.igRight,
         action: { type: "uri" as const, label: "Instagram", uri: igUrl },
       },
       {

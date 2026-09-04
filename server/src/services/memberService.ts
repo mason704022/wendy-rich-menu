@@ -75,3 +75,37 @@ export function refundSession(lineUserId: string) {
     `UPDATE members SET remaining_sessions = remaining_sessions + 1 WHERE line_user_id = ?`
   ).run(lineUserId);
 }
+
+export interface MemberSearchResult {
+  line_user_id: string;
+  name: string;
+  phone: string;
+  display_name: string;
+  total_sessions: number;
+  has_confirmed_purchase: boolean;
+}
+
+export function searchMembers(query: string, onlyWithPurchase = false): MemberSearchResult[] {
+  const db = getDb();
+  const q = `%${query.trim()}%`;
+  if (!query.trim()) return [];
+
+  const rows = db
+    .prepare(
+      `SELECT m.line_user_id, m.name, m.phone, m.display_name, m.total_sessions,
+              EXISTS(
+                SELECT 1 FROM purchases p
+                WHERE p.line_user_id = m.line_user_id AND p.status = 'confirmed'
+              ) AS has_confirmed_purchase
+       FROM members m
+       WHERE m.name LIKE ? OR m.phone LIKE ? OR m.display_name LIKE ?
+       ORDER BY m.name
+       LIMIT 30`
+    )
+    .all(q, q, q) as unknown as MemberSearchResult[];
+
+  if (onlyWithPurchase) {
+    return rows.filter((r) => r.has_confirmed_purchase);
+  }
+  return rows;
+}

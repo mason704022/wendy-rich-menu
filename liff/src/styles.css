@@ -1115,3 +1115,113 @@ body {
   padding: 40px 16px;
   text-align: center;
 }
+
+.coupon-section {
+  margin: 16px 0;
+  padding: 16px;
+  background: #faf8ff;
+  border-radius: 12px;
+  border: 1px solid #e8e0f5;
+}
+
+.coupon-section h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.coupon-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.coupon-price-breakdown {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.price-original {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.price-discount {
+  color: #7b5ea7;
+}
+
+.price-final {
+  font-size: 1.05rem;
+}
+
+.plan-summary-discount {
+  color: #7b5ea7;
+  margin-left: 4px;
+}
+
+.coupon-order-discount {
+  color: #7b5ea7;
+}
+
+.admin-form-grid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-form-grid label,
+.admin-coupons label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.admin-form-grid input,
+.admin-form-grid select,
+.admin-coupons input,
+.admin-coupons select {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.checkbox-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+
+.coupon-plan-checkboxes {
+  margin-bottom: 12px;
+}
+
+.member-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.member-search-item {
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.member-search-item.selected {
+  border-color: #7b5ea7;
+  background: #faf8ff;
+}
+
+.member-search-item strong {
+  display: block;
+}

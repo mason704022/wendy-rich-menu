@@ -13,7 +13,7 @@ export function resolveServerPath(relativePath: string): string {
 }
 
 export function loadJson<T>(filename: string): T {
-  const filePath = path.join(process.cwd(), "content", filename);
+  const filePath = path.join(SERVER_ROOT, "content", filename);
   return JSON.parse(fs.readFileSync(filePath, "utf-8")) as T;
 }
 

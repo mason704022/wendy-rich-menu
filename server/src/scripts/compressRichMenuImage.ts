@@ -16,9 +16,12 @@ export async function compressRichMenuImage(
     .resize(width, height, { fit: "fill" })
     .flatten({ background: "#fbf4ef" });
 
-  // Try JPEG qualities until under 1 MB
-  for (const quality of [85, 80, 75, 70, 65, 60]) {
-    const buffer = await pipeline.clone().jpeg({ quality, mozjpeg: true }).toBuffer();
+  // Try JPEG qualities (highest first) until under 1 MB
+  for (const quality of [92, 88, 85, 82, 80, 75, 70, 65, 60]) {
+    const buffer = await pipeline
+      .clone()
+      .jpeg({ quality, mozjpeg: true, chromaSubsampling: "4:4:4" })
+      .toBuffer();
     if (buffer.length <= MAX_BYTES) {
       const savedPath =
         outputPath ??

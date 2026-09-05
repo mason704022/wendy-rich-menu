@@ -3,7 +3,11 @@ dist/
 data/
 .env
 liff/.env
+liff/.env.development
+liff/.env.production
 server/.env
+server/.env.development
+server/.env.production
 *.db
 .DS_Store
 server/credentials/

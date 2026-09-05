@@ -245,6 +245,7 @@ npm run verify-deploy
 - 本機 ngrok / 舊 LIFF / 舊 token **保留作開發測試**
 - 正式會員引導加**新官方帳號**
 - 舊 OA 可設停止服務或自動回覆導流訊息
+- 環境範本與切換方式：[`DEV_PROD_ENVIRONMENTS.md`](DEV_PROD_ENVIRONMENTS.md)
 
 ---
 

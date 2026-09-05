@@ -23,6 +23,17 @@ npm run install:all
 
 ### 2. 設定環境變數
 
+**舊 OA 本機開發 + 新 OA Railway 正式**（建議）：
+
+```bash
+copy server\.env.development server\.env
+copy liff\.env.development liff\.env
+```
+
+詳見 [`docs/DEV_PROD_ENVIRONMENTS.md`](docs/DEV_PROD_ENVIRONMENTS.md)。
+
+通用單環境範本：
+
 ```bash
 copy server\.env.example server\.env
 copy liff\.env.example liff\.env
@@ -86,10 +97,11 @@ npm run confirm-purchase -- 1
 
 **正式上線 + 換新 LINE 官方帳號**（建議順序）：
 
-1. [`docs/LINE_ACCOUNT_MIGRATION.md`](docs/LINE_ACCOUNT_MIGRATION.md) — 完整 SOP（Phase 1–7）
-2. [`docs/RAILWAY_CHECKLIST.md`](docs/RAILWAY_CHECKLIST.md) — Railway Volume 與變數
-3. [`scripts/railway-env.template.env`](scripts/railway-env.template.env) — Railway Variables 範本
-4. [`docs/DEPLOY.md`](docs/DEPLOY.md) — 部署概覽
+1. [`docs/DEV_PROD_ENVIRONMENTS.md`](docs/DEV_PROD_ENVIRONMENTS.md) — 開發／正式雙環境範本與切換
+2. [`docs/LINE_ACCOUNT_MIGRATION.md`](docs/LINE_ACCOUNT_MIGRATION.md) — 完整 SOP（Phase 1–7）
+3. [`docs/RAILWAY_CHECKLIST.md`](docs/RAILWAY_CHECKLIST.md) — Railway Volume 與變數
+4. [`scripts/railway-env.template.env`](scripts/railway-env.template.env) — Railway Variables 範本
+5. [`docs/DEPLOY.md`](docs/DEPLOY.md) — 部署概覽
 
 GitHub：`https://github.com/mason704022/wendy-rich-menu`（連接 Railway 部署）
 

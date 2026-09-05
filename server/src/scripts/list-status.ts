@@ -1,8 +1,13 @@
-import { initDatabase, getDb } from "../db/index.js";
+import { initDatabase, getDb, getDbPath } from "../db/index.js";
 import "../config.js";
 
 initDatabase();
 const db = getDb();
+
+console.log(`資料庫：${getDbPath()}`);
+console.log(
+  "提示：正式環境（Railway）的會員不在本機 DB。請用 LIFF 管理頁，或在 Railway 上執行 list-status。\n"
+);
 
 function section(title: string) {
   console.log(`\n=== ${title} ===\n`);

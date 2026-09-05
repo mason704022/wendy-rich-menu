@@ -46,8 +46,15 @@ export async function lineWebhookHandler(req: Request, res: Response) {
 }
 
 async function handleEvent(event: webhook.Event) {
+  const userId = event.source?.userId;
+  console.log(`[Webhook] ${event.type}${userId ? ` userId=${userId}` : ""}`);
+
   if (event.type === "follow") {
-    console.log("New follower:", event.source?.userId);
+    console.log("New follower:", userId);
+  }
+
+  if (event.type === "message") {
+    console.log("Message from:", userId);
   }
 
   if (event.type === "postback") {

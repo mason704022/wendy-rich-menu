@@ -82,6 +82,7 @@ export function MemberPage() {
     return (
       <PageShell title="會員資訊" leftAlign showMemberLink={false}>
         <p className="page-hint">請先完成會員註冊</p>
+        <p className="slot-meta">您的 LINE ID：{profile.userId}</p>
         <RegisterForm onRegistered={() => setRegistered(true)} />
       </PageShell>
     );
@@ -129,6 +130,7 @@ export function MemberPage() {
             {summary.remainingSessions} 堂
           </p>
           <p className="slot-meta">加入日期：{summary.memberSince.slice(0, 10)}</p>
+          <p className="slot-meta">LINE ID：{profile.userId}</p>
         </section>
       )}
 

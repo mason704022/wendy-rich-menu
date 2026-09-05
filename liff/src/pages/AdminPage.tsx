@@ -326,23 +326,19 @@ export function AdminPage() {
 
           type="button"
 
-          className={`admin-tab ${tab === "purchases" ? "active" : ""}`}
+          className={`admin-tab admin-tab-with-count ${tab === "purchases" ? "active" : ""}`}
 
           onClick={() => setTab("purchases")}
 
         >
 
-          <span className="admin-tab-label-wrap">
+          待確認付款
 
-            待確認付款
+          {purchases.length > 0 && (
 
-            {purchases.length > 0 && (
+            <span className="admin-tab-count">{purchases.length}</span>
 
-              <span className="admin-tab-count">{purchases.length}</span>
-
-            )}
-
-          </span>
+          )}
 
         </button>
 

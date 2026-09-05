@@ -573,6 +573,7 @@ body {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  overflow: visible;
 }
 
 .admin-sub-tabs {
@@ -593,6 +594,11 @@ body {
   color: var(--purple-dark, #5a3d7a);
   font-weight: 600;
   cursor: pointer;
+  overflow: visible;
+}
+
+.admin-tab-with-count {
+  position: relative;
 }
 
 .admin-tab.active {
@@ -601,15 +607,11 @@ body {
   border-color: var(--purple, #7b5ea7);
 }
 
-.admin-tab-label-wrap {
-  position: relative;
-  display: inline-block;
-}
-
 .admin-tab-count {
   position: absolute;
-  top: -8px;
-  right: -16px;
+  top: 0;
+  right: 0;
+  transform: translate(75%, -75%);
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -621,6 +623,7 @@ body {
   line-height: 18px;
   text-align: center;
   box-sizing: border-box;
+  pointer-events: none;
 }
 
 .admin-badge {

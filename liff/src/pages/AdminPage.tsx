@@ -332,9 +332,17 @@ export function AdminPage() {
 
         >
 
-          待確認付款
+          <span className="admin-tab-label-wrap">
 
-          {purchases.length > 0 && <span className="admin-badge">{purchases.length}</span>}
+            待確認付款
+
+            {purchases.length > 0 && (
+
+              <span className="admin-tab-count">{purchases.length}</span>
+
+            )}
+
+          </span>
 
         </button>
 

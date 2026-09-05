@@ -601,6 +601,21 @@ body {
   border-color: var(--purple, #7b5ea7);
 }
 
+.admin-tab-label-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.admin-tab-count {
+  position: absolute;
+  top: -6px;
+  right: -12px;
+  color: #e87722;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .admin-badge {
   display: inline-block;
   margin-left: 6px;

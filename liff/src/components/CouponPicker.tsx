@@ -14,6 +14,11 @@ export interface PricePreview {
   templateName: string;
 }
 
+export interface PlanCouponPrice extends PricePreview {
+  couponAssignmentId: number;
+  expiresAt: string | null;
+}
+
 interface Props {
   coupons: AvailableCoupon[];
   selectedCouponId: number | null;

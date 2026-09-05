@@ -3,6 +3,7 @@ import { api } from "../lib/api";
 import { LoadError, apiErrorMessage } from "../components/LoadError";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
 import { PageShell } from "../components/PageShell";
+import type { AvailableCoupon } from "../components/CouponPicker";
 
 interface Summary {
   name: string;
@@ -30,6 +31,7 @@ export function MemberPage() {
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [myCoupons, setMyCoupons] = useState<AvailableCoupon[]>([]);
 
   const loadMemberData = useCallback(() => {
     setLoading(true);
@@ -46,6 +48,13 @@ export function MemberPage() {
       .catch((err) => setLoadError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, [profile.userId]);
+
+  useEffect(() => {
+    if (registered !== true) return;
+    api<{ coupons: AvailableCoupon[] }>(`/purchases/coupons/${profile.userId}`)
+      .then((res) => setMyCoupons(res.coupons))
+      .catch(() => setMyCoupons([]));
+  }, [registered, profile.userId]);
 
   useEffect(() => {
     if (registered === null) return;
@@ -131,6 +140,24 @@ export function MemberPage() {
           </p>
           <p className="slot-meta">加入日期：{summary.memberSince.slice(0, 10)}</p>
           <p className="slot-meta">LINE ID：{profile.userId}</p>
+        </section>
+      )}
+
+      {myCoupons.length > 0 && (
+        <section className="info-card coupon-member-card">
+          <h2>我的折扣券</h2>
+          {myCoupons.map((c) => (
+            <div className="slot-card" key={c.id}>
+              <h3>{c.templateName}</h3>
+              <p className="slot-meta">
+                {c.discountType === "fixed"
+                  ? `折 NT$${c.discountValue.toLocaleString()}`
+                  : `${c.discountValue}% 折扣`}
+                {c.expiresAt ? ` · 有效至 ${c.expiresAt.slice(0, 10)}` : " · 無期限"}
+              </p>
+              <p className="slot-meta">請至購買課程頁選用</p>
+            </div>
+          ))}
         </section>
       )}
 

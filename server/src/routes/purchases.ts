@@ -6,6 +6,7 @@ import { notifyAdmin, notifyUser } from "../lineClient.js";
 import {
   calculateDiscount,
   listAvailableForUser,
+  listBestDiscountsForUser,
   validateAndCalculate,
 } from "../services/couponService.js";
 import { getMember } from "../services/memberService.js";
@@ -56,8 +57,18 @@ purchasesRouter.get("/payment-info", (_req, res) => {
 
 purchasesRouter.get("/coupons/:lineUserId", (req, res) => {
   const planId = typeof req.query.planId === "string" ? req.query.planId : undefined;
+  const withPlanPrices =
+    req.query.withPlanPrices === "1" || req.query.withPlanPrices === "true";
   const coupons = listAvailableForUser(req.params.lineUserId, planId);
-  res.json({ coupons });
+
+  if (!withPlanPrices) {
+    return res.json({ coupons });
+  }
+
+  const data = loadJson<PlansFile>("plans.json");
+  const allPlans = data.categories.flatMap((c) => c.plans);
+  const planPrices = listBestDiscountsForUser(req.params.lineUserId, allPlans);
+  res.json({ coupons: listAvailableForUser(req.params.lineUserId), planPrices });
 });
 
 purchasesRouter.post("/coupons/preview", (req, res) => {

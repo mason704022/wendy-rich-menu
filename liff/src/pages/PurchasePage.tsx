@@ -7,7 +7,7 @@ import {
   type PlanCategory,
   type PaymentInfo,
 } from "../components/PlanSelector";
-import type { AvailableCoupon, PricePreview } from "../components/CouponPicker";
+import type { AvailableCoupon, PricePreview, PlanCouponPrice } from "../components/CouponPicker";
 import { PurchaseLanding } from "../components/PurchaseLanding";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
 
@@ -29,6 +29,7 @@ export function PurchasePage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [defaultPayerName, setDefaultPayerName] = useState("");
   const [coupons, setCoupons] = useState<AvailableCoupon[]>([]);
+  const [planPrices, setPlanPrices] = useState<Record<string, PlanCouponPrice>>({});
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
   const [pricePreview, setPricePreview] = useState<PricePreview | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -73,7 +74,18 @@ export function PurchasePage() {
   }, [registered, profile.userId]);
 
   useEffect(() => {
-    if (!registered || !selectedPlanId) {
+    if (!registered || view !== "plans") return;
+    api<{ coupons: AvailableCoupon[]; planPrices?: Record<string, PlanCouponPrice> }>(
+      `/purchases/coupons/${profile.userId}?withPlanPrices=1`
+    )
+      .then((res) => {
+        setPlanPrices(res.planPrices ?? {});
+      })
+      .catch(() => setPlanPrices({}));
+  }, [registered, view, profile.userId]);
+
+  useEffect(() => {
+    if (!registered || !selectedPlanId || view !== "plans") {
       setCoupons([]);
       return;
     }
@@ -82,12 +94,18 @@ export function PurchasePage() {
     )
       .then((res) => {
         setCoupons(res.coupons);
-        setSelectedCouponId((prev) =>
-          prev && res.coupons.some((c) => c.id === prev) ? prev : null
-        );
+        const best = planPrices[selectedPlanId];
+        const autoId =
+          best && res.coupons.some((c) => c.id === best.couponAssignmentId)
+            ? best.couponAssignmentId
+            : null;
+        setSelectedCouponId(autoId);
       })
-      .catch(() => setCoupons([]));
-  }, [registered, profile.userId, selectedPlanId]);
+      .catch(() => {
+        setCoupons([]);
+        setSelectedCouponId(null);
+      });
+  }, [registered, profile.userId, selectedPlanId, view, planPrices]);
 
   useEffect(() => {
     if (!selectedCouponId || !selectedPlanId) {
@@ -216,6 +234,7 @@ export function PurchasePage() {
           onSelectCoupon={setSelectedCouponId}
           pricePreview={pricePreview}
           couponLoading={couponLoading}
+          planPrices={planPrices}
         />
       </>
     );

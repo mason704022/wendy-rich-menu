@@ -298,15 +298,22 @@ adminRouter.post("/coupons/assignments", async (req, res) => {
   try {
     const assignment = assignToMember(parsed.data.templateId, parsed.data.lineUserId);
     const template = getTemplate(parsed.data.templateId);
-    res.status(201).json({ assignment });
 
+    let notified = false;
+    let notifyError: string | undefined;
     if (template) {
       const purchasePageUrl = liffUrl("purchase");
       const message = buildCouponAssignedMessage(template, purchasePageUrl);
-      void notifyUser(parsed.data.lineUserId, message).catch((notifyError) => {
-        console.error("[Coupon assign notify failed]", notifyError);
-      });
+      try {
+        await notifyUser(parsed.data.lineUserId, message);
+        notified = true;
+      } catch (err) {
+        notifyError = err instanceof Error ? err.message : "NOTIFY_FAILED";
+        console.error("[Coupon assign notify failed]", err);
+      }
     }
+
+    res.status(201).json({ assignment, notified, notifyError });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     res.status(400).json({ error: message });

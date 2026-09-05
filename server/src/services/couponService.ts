@@ -40,6 +40,11 @@ export interface DiscountCalculation {
   templateName: string;
 }
 
+export interface PlanCouponPrice extends DiscountCalculation {
+  couponAssignmentId: number;
+  expiresAt: string | null;
+}
+
 function parsePlanIds(planIdsJson: string): string[] {
   try {
     const parsed = JSON.parse(planIdsJson) as unknown;
@@ -222,6 +227,42 @@ export function listAvailableForUser(lineUserId: string, planId?: string) {
       expiresAt: a.expires_at,
       planIds: parsePlanIds(a.plan_ids),
     }));
+}
+
+/** Best applicable coupon price per plan (within validity). */
+export function listBestDiscountsForUser(
+  lineUserId: string,
+  plans: Array<{ id: string; price: number }>
+): Record<string, PlanCouponPrice> {
+  expireStaleAssignments();
+  const assignments = listAssignments({ lineUserId, status: "available" }).filter(
+    (a) => !isTemplateExpired(a.expires_at)
+  );
+
+  const result: Record<string, PlanCouponPrice> = {};
+
+  for (const plan of plans) {
+    let best: PlanCouponPrice | null = null;
+    for (const a of assignments) {
+      if (!isPlanEligible(a.plan_ids, plan.id)) continue;
+      const calc = calculateDiscount(a, plan.price);
+      if (calc.discount <= 0) continue;
+      const candidate: PlanCouponPrice = {
+        original: calc.original,
+        discount: calc.discount,
+        final: calc.final,
+        templateName: a.template_name,
+        couponAssignmentId: a.id,
+        expiresAt: a.expires_at,
+      };
+      if (!best || candidate.final < best.final) {
+        best = candidate;
+      }
+    }
+    if (best) result[plan.id] = best;
+  }
+
+  return result;
 }
 
 export function validateAndCalculate(

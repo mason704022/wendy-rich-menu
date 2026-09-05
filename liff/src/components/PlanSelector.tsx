@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PageShell } from "./PageShell";
 import { PaymentConfirmSheet } from "./PaymentConfirmSheet";
-import { CouponPicker, type AvailableCoupon, type PricePreview } from "./CouponPicker";
+import { CouponPicker, type AvailableCoupon, type PricePreview, type PlanCouponPrice } from "./CouponPicker";
 
 export interface Plan {
   id: string;
@@ -39,6 +39,7 @@ interface Props {
   onSelectCoupon?: (id: number | null) => void;
   pricePreview?: PricePreview | null;
   couponLoading?: boolean;
+  planPrices?: Record<string, PlanCouponPrice>;
 }
 
 export function PlanSelector({
@@ -55,6 +56,7 @@ export function PlanSelector({
   onSelectCoupon,
   pricePreview = null,
   couponLoading = false,
+  planPrices = {},
 }: Props) {
   const selectedPlan = categories
     .flatMap((c) => c.plans)
@@ -93,6 +95,7 @@ export function PlanSelector({
           .find((c) => c.id === activeCategory)
           ?.plans.map((plan) => {
             const selected = plan.id === selectedPlanId;
+            const planDiscount = planPrices[plan.id];
             return (
               <button
                 key={plan.id}
@@ -105,8 +108,27 @@ export function PlanSelector({
                 <p className="plan-desc">{plan.description}</p>
                 <div className="plan-meta">
                   <span>⏱ {plan.durationLabel}</span>
-                  <span>NT${plan.price.toLocaleString()}</span>
+                  <span className="plan-price">
+                    {planDiscount ? (
+                      <>
+                        <span className="price-original">
+                          NT${plan.price.toLocaleString()}
+                        </span>
+                        NT${planDiscount.final.toLocaleString()}
+                      </>
+                    ) : (
+                      <>NT${plan.price.toLocaleString()}</>
+                    )}
+                  </span>
                 </div>
+                {planDiscount && (
+                  <p className="plan-coupon-hint">
+                    {planDiscount.templateName} 折 NT${planDiscount.discount.toLocaleString()}
+                    {planDiscount.expiresAt
+                      ? ` · 至 ${planDiscount.expiresAt.slice(0, 10)}`
+                      : ""}
+                  </p>
+                )}
               </button>
             );
           })}

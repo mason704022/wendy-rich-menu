@@ -926,6 +926,22 @@ body {
   color: #888;
 }
 
+.plan-price {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.plan-coupon-hint {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #7b5ea7;
+  text-align: left;
+}
+
+.coupon-member-card h2 {
+  margin-top: 0;
+}
+
 .payment-dl {
   margin: 0;
 }

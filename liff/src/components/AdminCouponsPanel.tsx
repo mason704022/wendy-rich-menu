@@ -164,16 +164,25 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
     setSaving(true);
     onMessage({});
     try {
-      await api(`/admin/coupons/assignments?${adminQuery}`, {
-        method: "POST",
-        body: JSON.stringify({
-          templateId: assignTemplateId,
-          lineUserId: selectedMemberId,
-        }),
-      });
+      const res = await api<{ notified?: boolean; notifyError?: string }>(
+        `/admin/coupons/assignments?${adminQuery}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            templateId: assignTemplateId,
+            lineUserId: selectedMemberId,
+          }),
+        }
+      );
       setSelectedMemberId("");
       setMemberQuery("");
-      onMessage({ success: "已指派折扣券，並已通知會員" });
+      if (res.notified) {
+        onMessage({ success: "已指派折扣券，並已 LINE 通知會員" });
+      } else {
+        onMessage({
+          error: `折扣券已指派，但 LINE 通知失敗${res.notifyError ? `：${res.notifyError}` : "（請確認會員已加好友）"}`,
+        });
+      }
       await loadData();
     } catch (err) {
       onMessage({ error: err instanceof Error ? err.message : "指派失敗" });

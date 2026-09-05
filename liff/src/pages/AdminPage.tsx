@@ -312,23 +312,9 @@ export function AdminPage() {
 
         >
 
-          待確認匯款
+          待確認付款
 
           {purchases.length > 0 && <span className="admin-badge">{purchases.length}</span>}
-
-        </button>
-
-        <button
-
-          type="button"
-
-          className={`admin-tab ${tab === "bookings" ? "active" : ""}`}
-
-          onClick={() => setTab("bookings")}
-
-        >
-
-          課程名單
 
         </button>
 
@@ -342,7 +328,7 @@ export function AdminPage() {
 
         >
 
-          課程主題
+          課程管理
 
         </button>
 
@@ -360,6 +346,20 @@ export function AdminPage() {
 
         </button>
 
+        <button
+
+          type="button"
+
+          className={`admin-tab ${tab === "bookings" ? "active" : ""}`}
+
+          onClick={() => setTab("bookings")}
+
+        >
+
+          訂課資訊
+
+        </button>
+
       </div>
 
 
@@ -368,7 +368,7 @@ export function AdminPage() {
 
         <section className="info-card">
 
-          {purchases.length === 0 && <p>目前沒有待確認匯款</p>}
+          {purchases.length === 0 && <p>目前沒有待確認付款</p>}
 
           {purchases.map((p) => (
 

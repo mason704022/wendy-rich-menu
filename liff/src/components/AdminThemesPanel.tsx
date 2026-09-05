@@ -425,7 +425,7 @@ export function AdminThemesPanel({ adminQuery, lineUserId, onMessage }: Props) {
     adminWeeks.find((w) => w.weekStart === selectedWeekStart) ?? null;
 
   if (loading && weeks.length === 0) {
-    return <p>載入課程主題…</p>;
+    return <p>載入課程管理…</p>;
   }
 
   return (

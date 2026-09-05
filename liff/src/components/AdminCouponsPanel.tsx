@@ -248,7 +248,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
               onChange={(e) => setDiscountType(e.target.value as "fixed" | "percent")}
             >
               <option value="fixed">折扣金額</option>
-              <option value="percent">百分比</option>
+              <option value="percent">折扣百分比</option>
             </select>
           </label>
           <label>
@@ -329,7 +329,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
       </section>
 
       <section className="info-card">
-        <h3>指派給會員</h3>
+        <h3>傳送折扣券</h3>
         <div className="admin-form-grid">
           <label>
             折扣券
@@ -388,7 +388,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
           disabled={saving || !assignTemplateId || !selectedMemberId}
           onClick={assignCoupon}
         >
-          指派折扣券
+          確認傳送
         </button>
       </section>
 

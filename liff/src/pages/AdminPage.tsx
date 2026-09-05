@@ -78,6 +78,24 @@ interface BookingSession {
 
 type Tab = "purchases" | "bookings" | "themes" | "coupons";
 
+type BookingDayTab = 3 | 5 | 6;
+
+const BOOKING_DAY_TABS: { weekday: BookingDayTab; label: string }[] = [
+  { weekday: 3, label: "週三" },
+  { weekday: 5, label: "週五" },
+  { weekday: 6, label: "週六" },
+];
+
+function sessionWeekday(session: BookingSession): number {
+  const [y, m, d] = session.slot_date.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
+
+function matchesBookingDay(session: BookingSession, weekday: BookingDayTab): boolean {
+  if (session.label) return session.label === BOOKING_DAY_TABS.find((t) => t.weekday === weekday)?.label;
+  return sessionWeekday(session) === weekday;
+}
+
 
 
 export function AdminPage() {
@@ -85,6 +103,8 @@ export function AdminPage() {
   const profile = getProfile();
 
   const [tab, setTab] = useState<Tab>("purchases");
+
+  const [bookingDayTab, setBookingDayTab] = useState<BookingDayTab>(3);
 
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
@@ -456,59 +476,107 @@ export function AdminPage() {
 
         <section className="info-card">
 
-          {sessions.length === 0 && <p>近四週沒有預約</p>}
+          <div className="admin-tabs admin-sub-tabs">
 
-          {sessions.map((session) => (
+            {BOOKING_DAY_TABS.map((day) => {
 
-            <div
+              const daySessions = sessions.filter((s) => matchesBookingDay(s, day.weekday));
 
-              className="slot-card admin-session-card"
+              return (
 
-              key={`${session.slot_date}-${session.start_time}`}
+                <button
 
-            >
+                  key={day.weekday}
 
-              <h3>
+                  type="button"
 
-                {session.slot_date}（{session.label}）{session.start_time}-
+                  className={`admin-tab ${bookingDayTab === day.weekday ? "active" : ""}`}
 
-                {session.end_time}
+                  onClick={() => setBookingDayTab(day.weekday)}
 
-              </h3>
+                >
 
-              <p className="slot-meta">
+                  {day.label}
 
-                正取 {session.confirmed_count} 人 · 備取 {session.waitlist_count} 人 · 共{" "}
+                  {daySessions.length > 0 && (
 
-                {session.total_count} 人
+                    <span className="admin-badge">{daySessions.length}</span>
 
-              </p>
+                  )}
 
-              <ul className="admin-roster">
+                </button>
 
-                {session.attendees.map((a) => (
+              );
 
-                  <li key={a.booking_id}>
+            })}
 
-                    <strong>{a.member_name}</strong>
+          </div>
 
-                    <span className="slot-meta">
+          {(() => {
 
-                      {a.status === "waitlist" ? "備取" : "正取"}
+            const daySessions = sessions.filter((s) => matchesBookingDay(s, bookingDayTab));
 
-                      {a.coffee_name && ` · ${a.coffee_name}`}
+            const dayLabel = BOOKING_DAY_TABS.find((d) => d.weekday === bookingDayTab)?.label ?? "";
 
-                    </span>
+            if (daySessions.length === 0) {
 
-                  </li>
+              return <p>近四週沒有{dayLabel}的預約</p>;
 
-                ))}
+            }
 
-              </ul>
+            return daySessions.map((session) => (
 
-            </div>
+              <div
 
-          ))}
+                className="slot-card admin-session-card"
+
+                key={`${session.slot_date}-${session.start_time}`}
+
+              >
+
+                <h3>
+
+                  {session.slot_date}（{session.label}）{session.start_time}-
+
+                  {session.end_time}
+
+                </h3>
+
+                <p className="slot-meta">
+
+                  正取 {session.confirmed_count} 人 · 備取 {session.waitlist_count} 人 · 共{" "}
+
+                  {session.total_count} 人
+
+                </p>
+
+                <ul className="admin-roster">
+
+                  {session.attendees.map((a) => (
+
+                    <li key={a.booking_id}>
+
+                      <strong>{a.member_name}</strong>
+
+                      <span className="slot-meta">
+
+                        {a.status === "waitlist" ? "備取" : "正取"}
+
+                        {a.coffee_name && ` · ${a.coffee_name}`}
+
+                      </span>
+
+                    </li>
+
+                  ))}
+
+                </ul>
+
+              </div>
+
+            ));
+
+          })()}
 
         </section>
 

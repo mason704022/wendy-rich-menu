@@ -41,11 +41,9 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
                     ? "找不到此會員，請確認對方已完成註冊"
                     : body.error === "PHONE_ALREADY_REGISTERED"
                       ? "此手機號碼已被其他會員註冊"
-                      : body.error === "TEMPLATE_HAS_ACTIVE_ASSIGNMENTS"
-                        ? "此折扣券已有使用中的指派，無法刪除"
-                        : body.error === "TEMPLATE_NOT_FOUND"
-                          ? "找不到此折扣券"
-                          : body.error
+                      : body.error === "TEMPLATE_NOT_FOUND"
+                        ? "找不到此折扣券"
+                        : body.error
             : `HTTP ${res.status}`;
     throw new ApiError(message, {
       code: typeof body.error === "string" ? body.error : undefined,

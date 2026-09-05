@@ -329,14 +329,6 @@ export function deleteTemplate(templateId: number): void {
   if (!template) throw new Error("TEMPLATE_NOT_FOUND");
 
   const db = getDb();
-  const active = db
-    .prepare(
-      `SELECT COUNT(*) AS count FROM coupon_assignments
-       WHERE template_id = ? AND status IN ('reserved', 'used')`
-    )
-    .get(templateId) as { count: number };
-  if (active.count > 0) throw new Error("TEMPLATE_HAS_ACTIVE_ASSIGNMENTS");
-
   db.prepare("DELETE FROM coupon_assignments WHERE template_id = ?").run(templateId);
   db.prepare("DELETE FROM coupon_templates WHERE id = ?").run(templateId);
 }

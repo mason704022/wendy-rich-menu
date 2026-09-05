@@ -443,7 +443,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
                 <p className="slot-meta">
                   {formatDiscountType(deleteTemplate.discount_type, deleteTemplate.discount_value)}
                 </p>
-                <p className="slot-meta">已指派的可用券也會一併刪除。</p>
+                <p className="slot-meta">所有指派紀錄（含使用中）都會一併刪除。</p>
               </div>
             </div>
             <div className="sheet-footer confirm-cancel-footer">

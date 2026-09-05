@@ -1,4 +1,29 @@
 /** Simplified map illustration for 回咖啡 location */
+
+function VerticalLabel({
+  x,
+  y,
+  text,
+  fill = "#c0392b",
+  fontSize = 10,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  fill?: string;
+  fontSize?: number;
+}) {
+  return (
+    <text x={x} y={y} fill={fill} fontSize={fontSize} fontWeight="700">
+      {text.split("").map((char, i) => (
+        <tspan key={`${char}-${i}`} x={x} dy={i === 0 ? 0 : fontSize + 2}>
+          {char}
+        </tspan>
+      ))}
+    </text>
+  );
+}
+
 export function LocationMap() {
   return (
     <div className="location-map-wrap">
@@ -12,12 +37,7 @@ export function LocationMap() {
 
         {/* 茄苳景觀大道 — wide boulevard on the left */}
         <line x1="48" y1="8" x2="48" y2="242" stroke="#9eb3c9" strokeWidth="24" strokeLinecap="round" />
-        <text x="58" y="36" fill="#c0392b" fontSize="10" fontWeight="700">
-          茄苳景觀大道
-        </text>
-
-        {/* 頂埔路 */}
-        <line x1="48" y1="78" x2="145" y2="108" stroke="#d5d0c8" strokeWidth="7" strokeLinecap="round" />
+        <VerticalLabel x={14} y={52} text="茄苳景觀大道" />
 
         {/* 頂埔國小 */}
         <rect x="88" y="48" width="22" height="16" rx="2" fill="#e8e4dc" stroke="#bbb" strokeWidth="1" />
@@ -28,9 +48,7 @@ export function LocationMap() {
 
         {/* 經國路三段 — main vertical road (right) */}
         <line x1="248" y1="8" x2="248" y2="242" stroke="#b0b0b0" strokeWidth="12" strokeLinecap="round" />
-        <text x="256" y="118" fill="#c0392b" fontSize="11" fontWeight="700">
-          經國路三段
-        </text>
+        <VerticalLabel x={268} y={78} text="經國路三段" fontSize={11} />
 
         {/* 中華路四段 — thicker than 經國路 */}
         <line x1="8" y1="208" x2="332" y2="208" stroke="#999" strokeWidth="18" strokeLinecap="round" />
@@ -40,7 +58,7 @@ export function LocationMap() {
 
         {/* 經國路三段92巷 */}
         <line x1="108" y1="132" x2="248" y2="132" stroke="#d5d0c8" strokeWidth="7" strokeLinecap="round" />
-        <text x="112" y="124" fill="#888" fontSize="9" fontWeight="600">
+        <text x="218" y="148" fill="#888" fontSize="9" fontWeight="600" textAnchor="middle">
           92巷
         </text>
 

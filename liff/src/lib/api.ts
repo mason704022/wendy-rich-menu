@@ -18,13 +18,17 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
         ? "圖片太大，請選較小的照片或重新拍攝"
         : typeof body.message === "string"
           ? body.message
-          : typeof body.error === "string"
-            ? body.error === "API_NOT_FOUND"
-              ? "後端 API 不存在，請確認 server 已重啟且 ngrok 指向正確"
-              : body.error === "IMAGE_TOO_LARGE"
-                ? "圖片太大，請選較小的照片"
-                : body.error
-            : `HTTP ${res.status}`;
+            : typeof body.error === "string"
+              ? body.error === "API_NOT_FOUND"
+                ? "後端 API 不存在，請確認 server 已重啟且 ngrok 指向正確"
+                : body.error === "IMAGE_TOO_LARGE"
+                  ? "圖片太大，請選較小的照片"
+                  : body.error === "FORBIDDEN"
+                    ? "沒有管理員權限"
+                    : body.error === "MEMBER_NOT_FOUND"
+                      ? "找不到此會員，請確認對方已完成註冊"
+                      : body.error
+              : `HTTP ${res.status}`;
     throw new Error(message);
   }
 

@@ -1,15 +1,16 @@
 import type { NextFunction, Request, Response } from "express";
 import { getConfig } from "../config.js";
 
+/** Admin identity: query/header first so POST bodies can carry a member's lineUserId. */
 export function getLineUserIdFromRequest(req: Request): string | undefined {
-  const fromBody = req.body?.lineUserId;
-  if (typeof fromBody === "string" && fromBody) return fromBody;
-
   const fromQuery = req.query.lineUserId;
   if (typeof fromQuery === "string" && fromQuery) return fromQuery;
 
   const fromHeader = req.headers["x-line-user-id"];
   if (typeof fromHeader === "string" && fromHeader) return fromHeader;
+
+  const fromBody = req.body?.lineUserId;
+  if (typeof fromBody === "string" && fromBody) return fromBody;
 
   return undefined;
 }

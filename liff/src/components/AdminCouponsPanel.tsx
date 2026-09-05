@@ -83,7 +83,6 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    onMessage({});
     try {
       const [tplRes, assignRes, planRes] = await Promise.all([
         api<{ templates: CouponTemplate[] }>(`/admin/coupons/templates?${adminQuery}`),

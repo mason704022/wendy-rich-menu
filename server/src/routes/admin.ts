@@ -271,7 +271,7 @@ adminRouter.post("/coupons/templates", (req, res) => {
 
 adminRouter.get("/coupons/assignments", (req, res) => {
   const status = req.query.status;
-  const lineUserId = req.query.lineUserId;
+  const memberLineUserId = req.query.memberLineUserId;
   const assignments = listAssignments({
     status:
       status === "available" ||
@@ -280,7 +280,8 @@ adminRouter.get("/coupons/assignments", (req, res) => {
       status === "expired"
         ? status
         : undefined,
-    lineUserId: typeof lineUserId === "string" ? lineUserId : undefined,
+    lineUserId:
+      typeof memberLineUserId === "string" ? memberLineUserId : undefined,
   });
   res.json({ assignments });
 });

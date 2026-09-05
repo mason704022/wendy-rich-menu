@@ -1134,9 +1134,13 @@ body {
 
 .location-map {
   width: 100%;
+  max-width: 320px;
   height: auto;
+  display: block;
+  margin: 0 auto;
+  border: none;
+  background: transparent;
   border-radius: 8px;
-  border: 1px solid var(--border-light);
 }
 
 .location-map-note {

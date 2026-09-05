@@ -18,15 +18,13 @@
         color: #5a3d7a;
       }
       .location-map-wrap {
-        max-width: 420px;
+        max-width: 320px;
         margin: 0 auto;
       }
       .location-map {
         width: 100%;
         height: auto;
-        border-radius: 8px;
-        border: 1px solid #e8e4dc;
-        background: #fff;
+        display: block;
       }
       .location-map-note {
         font-size: 0.82rem;
@@ -37,45 +35,60 @@
     </style>
   </head>
   <body>
-    <h1>回咖啡位置示意圖（預覽 v2）</h1>
+    <h1>回咖啡位置示意圖（圓形 v16）</h1>
     <div class="location-map-wrap">
-      <svg viewBox="0 0 340 250" class="location-map" role="img" aria-label="回咖啡位置示意圖">
-        <rect width="340" height="250" fill="#f3f1eb" rx="8" />
-        <line x1="48" y1="8" x2="48" y2="242" stroke="#9eb3c9" stroke-width="24" stroke-linecap="round" />
-        <text x="14" y="52" fill="#c0392b" font-size="10" font-weight="700">
-          <tspan x="14" dy="0">茄</tspan>
-          <tspan x="14" dy="12">苳</tspan>
-          <tspan x="14" dy="12">景</tspan>
-          <tspan x="14" dy="12">觀</tspan>
-          <tspan x="14" dy="12">大</tspan>
-          <tspan x="14" dy="12">道</tspan>
-        </text>
-        <rect x="88" y="48" width="22" height="16" rx="2" fill="#e8e4dc" stroke="#bbb" stroke-width="1" />
-        <polygon points="88,48 99,40 110,48" fill="#c0392b" opacity="0.85" />
-        <text x="118" y="60" fill="#c0392b" font-size="10" font-weight="700">頂埔國小</text>
-        <line x1="248" y1="8" x2="248" y2="242" stroke="#b0b0b0" stroke-width="12" stroke-linecap="round" />
-        <text x="268" y="78" fill="#c0392b" font-size="11" font-weight="700">
-          <tspan x="268" dy="0">經</tspan>
-          <tspan x="268" dy="13">國</tspan>
-          <tspan x="268" dy="13">路</tspan>
-          <tspan x="268" dy="13">三</tspan>
-          <tspan x="268" dy="13">段</tspan>
-        </text>
-        <line x1="8" y1="208" x2="332" y2="208" stroke="#999" stroke-width="18" stroke-linecap="round" />
-        <text x="148" y="236" fill="#c0392b" font-size="10" font-weight="700">中華路四段</text>
-        <line x1="108" y1="132" x2="248" y2="132" stroke="#d5d0c8" stroke-width="7" stroke-linecap="round" />
-        <text x="218" y="148" fill="#888" font-size="9" font-weight="600" text-anchor="middle">92巷</text>
-        <rect x="168" y="108" width="28" height="20" rx="3" fill="#fff" stroke="#7b5ea7" stroke-width="1.5" />
-        <text x="182" y="122" text-anchor="middle" fill="#7b5ea7" font-size="11" font-weight="700">P</text>
-        <text x="200" y="122" fill="#c0392b" font-size="9" font-weight="700">停車場</text>
-        <circle cx="138" cy="132" r="16" fill="#c0392b" opacity="0.15" />
-        <path d="M138 112c-7 0-12 5-12 12 0 9 12 22 12 22s12-13 12-22c0-7-5-12-12-12z" fill="#c0392b" />
-        <circle cx="138" cy="124" r="3.5" fill="#fff" />
-        <text x="138" y="158" text-anchor="middle" fill="#333" font-size="11" font-weight="700">回咖啡</text>
-        <text x="300" y="236" fill="#c0392b" font-size="10" font-weight="700">火車站 →</text>
+      <svg viewBox="0 0 280 280" class="location-map" role="img" aria-label="回咖啡位置示意圖">
+        <defs>
+          <clipPath id="mapCircle">
+            <circle cx="140" cy="140" r="132" />
+          </clipPath>
+        </defs>
+        <g clip-path="url(#mapCircle)">
+          <circle cx="140" cy="140" r="132" fill="#6d5048" />
+          <g transform="translate(0, -33)">
+            <line x1="72" y1="18" x2="72" y2="305" stroke="#fff" stroke-width="15" />
+            <line x1="208" y1="18" x2="208" y2="305" stroke="#fff" stroke-width="15" />
+            <line x1="8" y1="218" x2="272" y2="218" stroke="#fff" stroke-width="17" />
+            <line x1="118" y1="128" x2="208" y2="128" stroke="#fff" stroke-width="10" />
+            <text x="72" y="94" text-anchor="middle" fill="#111" font-size="9" font-weight="800">
+              <tspan x="72" dy="0">茄</tspan>
+              <tspan x="72" dy="18">苳</tspan>
+              <tspan x="72" dy="18">景</tspan>
+              <tspan x="72" dy="18">觀</tspan>
+              <tspan x="72" dy="18">大</tspan>
+              <tspan x="72" dy="18">道</tspan>
+            </text>
+            <text x="208" y="99" text-anchor="middle" fill="#111" font-size="10" font-weight="800">
+              <tspan x="208" dy="0">經</tspan>
+              <tspan x="208" dy="20">國</tspan>
+              <tspan x="208" dy="20">路</tspan>
+              <tspan x="208" dy="20">三</tspan>
+              <tspan x="208" dy="20">段</tspan>
+            </text>
+            <text y="223" fill="#111" font-size="10" font-weight="800">
+              <tspan x="95">中</tspan>
+              <tspan x="115">華</tspan>
+              <tspan x="135">路</tspan>
+              <tspan x="155">四</tspan>
+              <tspan x="175">段</tspan>
+            </text>
+            <text x="168" y="132" text-anchor="middle" fill="#111" font-size="9" font-weight="800">92巷</text>
+            <rect x="96" y="133" width="78" height="28" fill="#e8dcc8" />
+            <text x="135" y="152" text-anchor="middle" fill="#111" font-size="16" font-weight="800">回咖啡</text>
+            <g transform="translate(135, 124) scale(0.55) translate(-12, -24)">
+              <path d="M12 2c-5.5 0-10 4.5-10 10 0 7.5 10 18 10 18s10-10.5 10-18c0-5.5-4.5-10-10-10z" fill="#c0392b" />
+              <circle cx="12" cy="12" r="3" fill="#fff" />
+            </g>
+            <rect x="178" y="133" width="22" height="22" fill="#f0e6d4" />
+            <text x="189" y="148" text-anchor="middle" fill="#111" font-size="11" font-weight="800">P</text>
+            <rect x="88" y="234" width="104" height="28" fill="#888" />
+            <text x="140" y="253" text-anchor="middle" fill="#fff" font-size="12" font-weight="800">新竹火車站 →</text>
+          </g>
+        </g>
+        <circle cx="140" cy="140" r="132" fill="none" stroke="#5a4038" stroke-width="1" />
       </svg>
       <p class="location-map-note">
-        新竹市東區 · 經國路三段92巷內（旁有停車場）· 近茄苳景觀大道與頂埔國小
+        新竹市香山區經國路三段92巷29號（旁有收費停車場）· 近茄苳景觀大道與頂埔國小
       </p>
     </div>
   </body>

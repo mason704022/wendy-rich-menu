@@ -1,22 +1,31 @@
-/** Simplified map illustration for 回咖啡 location */
+/** Simplified map for 回咖啡 location (晶品城-style) */
 
 function VerticalLabel({
   x,
   y,
   text,
-  fill = "#c0392b",
-  fontSize = 10,
+  fontSize = 11,
+  textAnchor = "middle",
 }: {
   x: number;
   y: number;
   text: string;
-  fill?: string;
   fontSize?: number;
+  textAnchor?: "middle" | "start" | "end";
 }) {
+  const step = fontSize * 2;
+
   return (
-    <text x={x} y={y} fill={fill} fontSize={fontSize} fontWeight="700">
+    <text
+      x={x}
+      y={y}
+      textAnchor={textAnchor}
+      fill="#111"
+      fontSize={fontSize}
+      fontWeight="800"
+    >
       {text.split("").map((char, i) => (
-        <tspan key={`${char}-${i}`} x={x} dy={i === 0 ? 0 : fontSize + 2}>
+        <tspan key={`${char}-${i}`} x={x} dy={i === 0 ? 0 : step}>
           {char}
         </tspan>
       ))}
@@ -24,70 +33,185 @@ function VerticalLabel({
   );
 }
 
+function HorizontalLabel({
+  x,
+  y,
+  text,
+  fontSize = 10,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  fontSize?: number;
+}) {
+  const chars = text.split("");
+  const step = fontSize * 2;
+  const totalWidth = fontSize + (chars.length - 1) * step;
+  const startX = x - totalWidth / 2 + fontSize / 2;
+
+  return (
+    <text y={y} fill="#111" fontSize={fontSize} fontWeight="800">
+      {chars.map((char, i) => (
+        <tspan key={`${char}-${i}`} x={startX + i * step}>
+          {char}
+        </tspan>
+      ))}
+    </text>
+  );
+}
+
+function verticalLabelStartY(text: string, fontSize: number, centerY: number) {
+  const step = fontSize * 2;
+  const totalHeight = fontSize + (text.length - 1) * step;
+  return centerY - totalHeight / 2 + fontSize * 0.35;
+}
+
+function LocationPin({ x, y, scale = 0.55 }: { x: number; y: number; scale?: number }) {
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale}) translate(-12, -24)`}>
+      <path
+        d="M12 2c-5.5 0-10 4.5-10 10 0 7.5 10 18 10 18s10-10.5 10-18c0-5.5-4.5-10-10-10z"
+        fill="#c0392b"
+      />
+      <circle cx="12" cy="12" r="3" fill="#fff" />
+    </g>
+  );
+}
+
+function PoiBox({
+  x,
+  y,
+  width,
+  height,
+  label,
+  fill = "#e8dcc8",
+  textFill = "#111",
+  fontSize = 11,
+}: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  fill?: string;
+  textFill?: string;
+  fontSize?: number;
+}) {
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height={height} fill={fill} />
+      <text
+        x={x + width / 2}
+        y={y + height / 2 + fontSize * 0.35}
+        textAnchor="middle"
+        fill={textFill}
+        fontSize={fontSize}
+        fontWeight="800"
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
 export function LocationMap() {
+  const cx = 140;
+  const cy = 140;
+  const r = 132;
+  const contentOffsetY = -r / 4;
+  const circleLeft = cx - r;
+  const circleRight = cx + r;
+  const circleBottom = cy + r;
+  const roadBottom = circleBottom - contentOffsetY;
+
+  const road = "#fff";
+  const roadW = 15;
+
+  const qiedongX = 72;
+  const jingguoX = 208;
+  const zhonghuaY = 218;
+
   return (
     <div className="location-map-wrap">
       <svg
-        viewBox="0 0 340 250"
+        viewBox="0 0 280 280"
         className="location-map"
         role="img"
         aria-label="回咖啡位置示意圖"
       >
-        <rect width="340" height="250" fill="#f3f1eb" rx="8" />
+        <defs>
+          <clipPath id="mapCircle">
+            <circle cx={cx} cy={cy} r={r} />
+          </clipPath>
+        </defs>
 
-        {/* 茄苳景觀大道 — wide boulevard on the left */}
-        <line x1="48" y1="8" x2="48" y2="242" stroke="#9eb3c9" strokeWidth="24" strokeLinecap="round" />
-        <VerticalLabel x={14} y={52} text="茄苳景觀大道" />
+        <g clipPath="url(#mapCircle)">
+          <circle cx={cx} cy={cy} r={r} fill="#6d5048" />
 
-        {/* 頂埔國小 */}
-        <rect x="88" y="48" width="22" height="16" rx="2" fill="#e8e4dc" stroke="#bbb" strokeWidth="1" />
-        <polygon points="88,48 99,40 110,48" fill="#c0392b" opacity="0.85" />
-        <text x="118" y="60" fill="#c0392b" fontSize="10" fontWeight="700">
-          頂埔國小
-        </text>
+          <g transform={`translate(0, ${contentOffsetY})`}>
+            {/* 茄苳景觀大道 */}
+            <line x1={qiedongX} y1={18} x2={qiedongX} y2={roadBottom} stroke={road} strokeWidth={roadW} />
 
-        {/* 經國路三段 — main vertical road (right) */}
-        <line x1="248" y1="8" x2="248" y2="242" stroke="#b0b0b0" strokeWidth="12" strokeLinecap="round" />
-        <VerticalLabel x={268} y={78} text="經國路三段" fontSize={11} />
+            {/* 經國路三段 */}
+            <line x1={jingguoX} y1={18} x2={jingguoX} y2={roadBottom} stroke={road} strokeWidth={roadW} />
 
-        {/* 中華路四段 — thicker than 經國路 */}
-        <line x1="8" y1="208" x2="332" y2="208" stroke="#999" strokeWidth="18" strokeLinecap="round" />
-        <text x="148" y="236" fill="#c0392b" fontSize="10" fontWeight="700">
-          中華路四段
-        </text>
+            {/* 中華路四段 */}
+            <line
+              x1={circleLeft}
+              y1={zhonghuaY}
+              x2={circleRight}
+              y2={zhonghuaY}
+              stroke={road}
+              strokeWidth={roadW + 2}
+            />
 
-        {/* 經國路三段92巷 */}
-        <line x1="108" y1="132" x2="248" y2="132" stroke="#d5d0c8" strokeWidth="7" strokeLinecap="round" />
-        <text x="218" y="148" fill="#888" fontSize="9" fontWeight="600" textAnchor="middle">
-          92巷
-        </text>
+            {/* 92巷 */}
+            <line x1={118} y1={128} x2={208} y2={128} stroke={road} strokeWidth={10} />
 
-        {/* 停車場 */}
-        <rect x="168" y="108" width="28" height="20" rx="3" fill="#fff" stroke="#7b5ea7" strokeWidth="1.5" />
-        <text x="182" y="122" textAnchor="middle" fill="#7b5ea7" fontSize="11" fontWeight="700">
-          P
-        </text>
-        <text x="200" y="122" fill="#c0392b" fontSize="9" fontWeight="700">
-          停車場
-        </text>
+            {/* 路名 — 置於白色道路中央，字距留一字空白 */}
+            <VerticalLabel
+              x={qiedongX}
+              y={verticalLabelStartY("茄苳景觀大道", 9, 140)}
+              text="茄苳景觀大道"
+              fontSize={9}
+            />
+            <VerticalLabel
+              x={jingguoX}
+              y={verticalLabelStartY("經國路三段", 10, 140)}
+              text="經國路三段"
+              fontSize={10}
+            />
+            <HorizontalLabel x={140} y={223} text="中華路四段" fontSize={10} />
+            <text x={168} y={132} textAnchor="middle" fill="#111" fontSize="9" fontWeight="800">
+              92巷
+            </text>
 
-        {/* 回咖啡 pin — inside 92巷 */}
-        <circle cx="138" cy="132" r="16" fill="#c0392b" opacity="0.15" />
-        <path
-          d="M138 112c-7 0-12 5-12 12 0 9 12 22 12 22s12-13 12-22c0-7-5-12-12-12z"
-          fill="#c0392b"
-        />
-        <circle cx="138" cy="124" r="3.5" fill="#fff" />
-        <text x="138" y="158" textAnchor="middle" fill="#333" fontSize="11" fontWeight="700">
-          回咖啡
-        </text>
+            {/* 回咖啡 — 向左放大，可超出 92巷 */}
+            <PoiBox x={96} y={133} width={78} height={28} label="回咖啡" fontSize={16} />
+            <LocationPin x={135} y={124} />
 
-        <text x="300" y="236" fill="#c0392b" fontSize="10" fontWeight="700">
-          火車站 →
-        </text>
+            {/* 停車場 — 僅 P */}
+            <PoiBox x={178} y={133} width={22} height={22} label="P" fill="#f0e6d4" />
+
+            {/* 新竹火車站 — 灰底白字 */}
+            <rect x={88} y={234} width={104} height={28} fill="#888" />
+            <text
+              x={140}
+              y={253}
+              textAnchor="middle"
+              fill="#fff"
+              fontSize="12"
+              fontWeight="800"
+            >
+              新竹火車站 →
+            </text>
+          </g>
+        </g>
+
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#5a4038" strokeWidth="1" />
       </svg>
       <p className="location-map-note">
-        新竹市東區 · 經國路三段92巷內（旁有停車場）· 近茄苳景觀大道與頂埔國小
+        新竹市香山區經國路三段92巷29號（旁有收費停車場）· 近茄苳景觀大道與頂埔國小
       </p>
     </div>
   );

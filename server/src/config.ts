@@ -33,6 +33,7 @@ export function getConfig() {
     googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "",
     googleSheetsBookingsTab: process.env.GOOGLE_SHEETS_BOOKINGS_TAB ?? "預約",
     googleSheetsPurchasesTab: process.env.GOOGLE_SHEETS_PURCHASES_TAB ?? "匯款訂單",
+    googleSheetsMembersTab: process.env.GOOGLE_SHEETS_MEMBERS_TAB ?? "會員註冊",
     googleSheetsUrl: process.env.GOOGLE_SHEETS_URL ?? "",
     defaultSessions: Number(process.env.DEFAULT_SESSIONS_PER_PURCHASE ?? 10),
     defaultAmount: Number(process.env.DEFAULT_PURCHASE_AMOUNT ?? 3000),

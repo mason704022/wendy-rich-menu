@@ -4,8 +4,10 @@ import { listAllBookings } from "../services/bookingService.js";
 import {
   isGoogleSheetsConfigured,
   syncBookingToSheet,
+  syncMemberToSheet,
   syncPurchaseToSheet,
 } from "../services/googleSheetsService.js";
+import { listAllMembers } from "../services/memberService.js";
 import { listAllPurchases } from "../services/purchaseService.js";
 
 initDatabase();
@@ -21,6 +23,7 @@ if (!isGoogleSheetsConfigured()) {
 async function main() {
   const bookings = listAllBookings();
   const purchases = listAllPurchases();
+  const members = listAllMembers();
 
   console.log(`Syncing ${bookings.length} bookings...`);
   for (const booking of bookings) {
@@ -30,6 +33,11 @@ async function main() {
   console.log(`Syncing ${purchases.length} purchases...`);
   for (const purchase of purchases) {
     await syncPurchaseToSheet(purchase);
+  }
+
+  console.log(`Syncing ${members.length} members...`);
+  for (const member of members) {
+    await syncMemberToSheet(member);
   }
 
   console.log("Done.");

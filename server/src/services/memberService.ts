@@ -10,6 +10,33 @@ export interface Member {
   created_at: string;
 }
 
+export function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+export function findMemberByPhone(
+  phone: string,
+  excludeLineUserId?: string
+): Member | undefined {
+  const normalized = normalizePhone(phone);
+  if (!normalized) return undefined;
+
+  const db = getDb();
+  const rows = db.prepare("SELECT * FROM members").all() as unknown as Member[];
+  return rows.find(
+    (m) =>
+      normalizePhone(m.phone) === normalized &&
+      (!excludeLineUserId || m.line_user_id !== excludeLineUserId)
+  );
+}
+
+export function listAllMembers(): Member[] {
+  const db = getDb();
+  return db
+    .prepare("SELECT * FROM members ORDER BY created_at ASC")
+    .all() as unknown as Member[];
+}
+
 export function getMember(lineUserId: string): Member | undefined {
   const db = getDb();
   return db
@@ -22,14 +49,19 @@ export function registerMember(input: {
   displayName: string;
   name: string;
   phone: string;
-}): Member {
+}): { member: Member; isNew: boolean } {
+  const duplicate = findMemberByPhone(input.phone, input.lineUserId);
+  if (duplicate) {
+    throw new Error("PHONE_ALREADY_REGISTERED");
+  }
+
   const db = getDb();
   const existing = getMember(input.lineUserId);
   if (existing) {
     db.prepare(
       `UPDATE members SET display_name = ?, name = ?, phone = ? WHERE line_user_id = ?`
     ).run(input.displayName, input.name, input.phone, input.lineUserId);
-    return getMember(input.lineUserId)!;
+    return { member: getMember(input.lineUserId)!, isNew: false };
   }
 
   db.prepare(
@@ -37,7 +69,7 @@ export function registerMember(input: {
      VALUES (?, ?, ?, ?)`
   ).run(input.lineUserId, input.displayName, input.name, input.phone);
 
-  return getMember(input.lineUserId)!;
+  return { member: getMember(input.lineUserId)!, isNew: true };
 }
 
 export function addSessions(lineUserId: string, sessions: number) {

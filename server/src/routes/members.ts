@@ -1,7 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
 import { loadJson } from "../config.js";
-import { getMember, registerMember, updateMemberName } from "../services/memberService.js";
+import {
+  findMemberByPhone,
+  getMember,
+  registerMember,
+  updateMemberName,
+} from "../services/memberService.js";
+import { syncMemberToSheetSafe } from "../services/googleSheetsService.js";
 import { sendOtp, verifyOtp } from "../services/otpService.js";
 
 export const membersRouter = Router();
@@ -59,8 +65,24 @@ membersRouter.post("/register", (req, res) => {
     return res.status(400).json({ error: "INVALID_OTP", message: "簡訊驗證碼錯誤或已過期" });
   }
 
-  const member = registerMember(parsed.data);
-  res.json({ member });
+  try {
+    const { member, isNew } = registerMember(parsed.data);
+    syncMemberToSheetSafe(member);
+    res.json({ member, isNew });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN";
+    if (message === "PHONE_ALREADY_REGISTERED") {
+      const existing = findMemberByPhone(parsed.data.phone);
+      return res.status(409).json({
+        error: message,
+        message: "此手機號碼已被其他會員註冊",
+        existingMember: existing
+          ? { name: existing.name, phone: existing.phone }
+          : undefined,
+      });
+    }
+    return res.status(400).json({ error: message });
+  }
 });
 
 membersRouter.patch("/:lineUserId/name", (req, res) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, apiOptional } from "../lib/api";
+import { api, apiOptional, ApiError } from "../lib/api";
 import { getProfile } from "../lib/liff";
 
 interface Props {
@@ -18,6 +18,9 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [duplicateMember, setDuplicateMember] = useState<{ name: string; phone: string } | null>(
+    null
+  );
 
   useEffect(() => {
     apiOptional<{ registered: boolean; member?: { name: string; phone: string } }>(
@@ -79,7 +82,14 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
       });
       onRegistered();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "註冊失敗");
+      if (err instanceof ApiError && err.code === "PHONE_ALREADY_REGISTERED") {
+        setDuplicateMember(
+          err.existingMember ?? { name: "其他會員", phone }
+        );
+        setError("");
+      } else {
+        setError(err instanceof Error ? err.message : "註冊失敗");
+      }
     } finally {
       setLoading(false);
     }
@@ -152,6 +162,42 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
           </button>
         </form>
       </div>
+
+      {duplicateMember && (
+        <div className="sheet-overlay" onClick={() => setDuplicateMember(null)}>
+          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-header">
+              <button
+                type="button"
+                className="sheet-close-btn"
+                onClick={() => setDuplicateMember(null)}
+              >
+                關閉
+              </button>
+              <h2 className="sheet-title">重複註冊</h2>
+            </div>
+            <div className="sheet-body">
+              <p className="sheet-intro">此手機號碼已被註冊，無法重複建立會員。</p>
+              <div className="slot-card">
+                <h3>{duplicateMember.name}</h3>
+                <p className="slot-meta">手機：{duplicateMember.phone}</p>
+              </div>
+              <p className="slot-meta">
+                若這是您的帳號，請使用當初註冊的 LINE 帳號登入；若手機填錯，請修改後再試。
+              </p>
+            </div>
+            <div className="sheet-footer confirm-cancel-footer">
+              <button
+                type="button"
+                className="btn btn-purple"
+                onClick={() => setDuplicateMember(null)}
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

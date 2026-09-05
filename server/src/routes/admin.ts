@@ -8,6 +8,7 @@ import {
   assignToMember,
   buildCouponAssignedMessage,
   createTemplate,
+  deleteTemplate,
   getTemplate,
   listAssignments,
   listTemplates,
@@ -267,6 +268,16 @@ adminRouter.post("/coupons/templates", (req, res) => {
     note: parsed.data.note,
   });
   res.status(201).json({ template });
+});
+
+adminRouter.delete("/coupons/templates/:id", (req, res) => {
+  try {
+    deleteTemplate(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN";
+    res.status(400).json({ error: message });
+  }
 });
 
 adminRouter.get("/coupons/assignments", (req, res) => {

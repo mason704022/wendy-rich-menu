@@ -80,6 +80,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
   const [onlyWithPurchase, setOnlyWithPurchase] = useState(true);
   const [memberResults, setMemberResults] = useState<MemberSearchResult[]>([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [deleteTemplate, setDeleteTemplate] = useState<CouponTemplate | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -92,9 +93,10 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
       setTemplates(tplRes.templates);
       setAssignments(assignRes.assignments);
       setPlans(planRes.categories);
-      setAssignTemplateId((prev) =>
-        prev !== "" ? prev : tplRes.templates[0]?.id ?? ""
-      );
+      setAssignTemplateId((prev) => {
+        if (prev !== "" && tplRes.templates.some((t) => t.id === prev)) return prev;
+        return tplRes.templates[0]?.id ?? "";
+      });
     } catch (err) {
       onMessage({ error: err instanceof Error ? err.message : "載入失敗" });
     } finally {
@@ -124,7 +126,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
   async function createTemplate() {
     const value = Number(discountValue);
     if (!name.trim() || !Number.isFinite(value) || value <= 0) {
-      onMessage({ error: "請填寫券名稱與有效折扣數值" });
+      onMessage({ error: "請填寫折扣券名稱與有效折扣數值" });
       return;
     }
     setSaving(true);
@@ -146,10 +148,28 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
       setExpiresAt("");
       setSelectedPlanIds([]);
       setNote("");
-      onMessage({ success: "折扣券已建立" });
+      onMessage({ success: "折扣券已新增" });
       await loadData();
     } catch (err) {
-      onMessage({ error: err instanceof Error ? err.message : "建立失敗" });
+      onMessage({ error: err instanceof Error ? err.message : "新增失敗" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function confirmDeleteTemplate() {
+    if (!deleteTemplate) return;
+    setSaving(true);
+    onMessage({});
+    try {
+      await api(`/admin/coupons/templates/${deleteTemplate.id}?${adminQuery}`, {
+        method: "DELETE",
+      });
+      setDeleteTemplate(null);
+      onMessage({ success: "折扣券已刪除" });
+      await loadData();
+    } catch (err) {
+      onMessage({ error: err instanceof Error ? err.message : "刪除失敗" });
     } finally {
       setSaving(false);
     }
@@ -157,7 +177,7 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
 
   async function assignCoupon() {
     if (!assignTemplateId || !selectedMemberId) {
-      onMessage({ error: "請選擇券模板與會員" });
+      onMessage({ error: "請選擇折扣券與會員" });
       return;
     }
     setSaving(true);
@@ -215,10 +235,10 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
   return (
     <div className="admin-coupons">
       <section className="info-card">
-        <h3>建立折扣券</h3>
+        <h3>新增折扣券</h3>
         <div className="admin-form-grid">
           <label>
-            券名稱
+            折扣券名稱
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="舊生回饋 500 元" />
           </label>
           <label>
@@ -227,12 +247,12 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
               value={discountType}
               onChange={(e) => setDiscountType(e.target.value as "fixed" | "percent")}
             >
-              <option value="fixed">固定金額</option>
+              <option value="fixed">折扣金額</option>
               <option value="percent">百分比</option>
             </select>
           </label>
           <label>
-            {discountType === "fixed" ? "折抵金額（NT$）" : "折扣百分比（1–100）"}
+            {discountType === "fixed" ? "折扣金額（NT$）" : "折扣百分比（1–100）"}
             <input
               type="number"
               value={discountValue}
@@ -276,15 +296,43 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
           disabled={saving}
           onClick={createTemplate}
         >
-          建立券模板
+          新增折扣券
         </button>
+      </section>
+
+      <section className="info-card">
+        <h3>折扣券列表</h3>
+        {templates.length === 0 && <p>尚無折扣券</p>}
+        {templates.map((t) => (
+          <div className="slot-card" key={t.id}>
+            <h4>{t.name}</h4>
+            <p className="slot-meta">
+              {formatDiscountType(t.discount_type, t.discount_value)}
+              {t.expires_at ? ` · 至 ${t.expires_at.slice(0, 10)}` : ""}
+            </p>
+            <p className="slot-meta">
+              適用：
+              {parsePlanIds(t.plan_ids).length === 0
+                ? "全部方案"
+                : parsePlanIds(t.plan_ids).join("、")}
+            </p>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={saving}
+              onClick={() => setDeleteTemplate(t)}
+            >
+              刪除
+            </button>
+          </div>
+        ))}
       </section>
 
       <section className="info-card">
         <h3>指派給會員</h3>
         <div className="admin-form-grid">
           <label>
-            券模板
+            折扣券
             <select
               value={assignTemplateId}
               onChange={(e) =>
@@ -345,26 +393,6 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
       </section>
 
       <section className="info-card">
-        <h3>券模板列表</h3>
-        {templates.length === 0 && <p>尚無券模板</p>}
-        {templates.map((t) => (
-          <div className="slot-card" key={t.id}>
-            <h4>{t.name}</h4>
-            <p className="slot-meta">
-              {formatDiscountType(t.discount_type, t.discount_value)}
-              {t.expires_at ? ` · 至 ${t.expires_at.slice(0, 10)}` : ""}
-            </p>
-            <p className="slot-meta">
-              適用：
-              {parsePlanIds(t.plan_ids).length === 0
-                ? "全部方案"
-                : parsePlanIds(t.plan_ids).join("、")}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      <section className="info-card">
         <h3>指派紀錄</h3>
         {assignments.length === 0 && <p>尚無指派紀錄</p>}
         {assignments.map((a) => (
@@ -390,6 +418,55 @@ export function AdminCouponsPanel({ adminQuery, onMessage }: Props) {
           </div>
         ))}
       </section>
+
+      {deleteTemplate && (
+        <div
+          className="sheet-overlay"
+          onClick={() => !saving && setDeleteTemplate(null)}
+        >
+          <div className="sheet-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-header">
+              <button
+                type="button"
+                className="sheet-close-btn"
+                disabled={saving}
+                onClick={() => setDeleteTemplate(null)}
+              >
+                關閉
+              </button>
+              <h2 className="sheet-title">刪除折扣券</h2>
+            </div>
+            <div className="sheet-body">
+              <p className="sheet-intro">確定要刪除以下折扣券嗎？</p>
+              <div className="slot-card">
+                <h3>{deleteTemplate.name}</h3>
+                <p className="slot-meta">
+                  {formatDiscountType(deleteTemplate.discount_type, deleteTemplate.discount_value)}
+                </p>
+                <p className="slot-meta">已指派的可用券也會一併刪除。</p>
+              </div>
+            </div>
+            <div className="sheet-footer confirm-cancel-footer">
+              <button
+                type="button"
+                className="btn btn-outline"
+                disabled={saving}
+                onClick={() => setDeleteTemplate(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="btn btn-purple"
+                disabled={saving}
+                onClick={confirmDeleteTemplate}
+              >
+                {saving ? "刪除中…" : "確定刪除"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

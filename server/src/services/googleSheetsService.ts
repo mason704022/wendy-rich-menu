@@ -3,7 +3,7 @@ import { google, sheets_v4 } from "googleapis";
 import { getConfig, resolveServerPath } from "../config.js";
 import type { Booking } from "./bookingService.js";
 import { getCoffeeItem } from "./coffeeMenuService.js";
-import { getMember } from "./memberService.js";
+import { getMember, listAllMembers, type Member } from "./memberService.js";
 import type { Purchase } from "./purchaseService.js";
 import { getCouponNameForPurchase } from "./couponService.js";
 
@@ -34,6 +34,14 @@ const PURCHASE_HEADERS = [
   "狀態",
   "建立時間",
   "確認時間",
+];
+
+const MEMBER_HEADERS = [
+  "LINE User ID",
+  "姓名",
+  "手機",
+  "LINE顯示名稱",
+  "註冊時間",
 ];
 
 let sheetsClient: sheets_v4.Sheets | null = null;
@@ -124,12 +132,27 @@ function purchaseToRow(purchase: Purchase): string[] {
   ];
 }
 
-async function ensureHeaders(tab: string, headers: string[]): Promise<void> {
+function memberToRow(member: Member): string[] {
+  return [
+    member.line_user_id,
+    member.name,
+    member.phone,
+    member.display_name,
+    member.created_at,
+  ];
+}
+
+async function ensureHeaders(
+  tab: string,
+  headers: string[],
+  colCount = headers.length
+): Promise<void> {
   const sheets = getSheetsClient();
   const { googleSheetsSpreadsheetId } = getConfig();
   if (!sheets || !googleSheetsSpreadsheetId) return;
 
-  const range = `${tab}!A1:M1`;
+  const endCol = String.fromCharCode(64 + colCount);
+  const range = `${tab}!A1:${endCol}1`;
   const existing = await sheets.spreadsheets.values.get({
     spreadsheetId: googleSheetsSpreadsheetId,
     range,
@@ -147,6 +170,10 @@ async function ensureHeaders(tab: string, headers: string[]): Promise<void> {
 }
 
 async function findRowById(tab: string, id: number): Promise<number | null> {
+  return findRowByColA(tab, String(id));
+}
+
+async function findRowByColA(tab: string, value: string): Promise<number | null> {
   const sheets = getSheetsClient();
   const { googleSheetsSpreadsheetId } = getConfig();
   if (!sheets || !googleSheetsSpreadsheetId) return null;
@@ -158,27 +185,32 @@ async function findRowById(tab: string, id: number): Promise<number | null> {
   });
 
   const rows = result.data.values ?? [];
-  const idStr = String(id);
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i][0] === idStr) return i + 1;
+    if (rows[i][0] === value) return i + 1;
   }
   return null;
 }
 
-async function upsertRow(tab: string, headers: string[], row: string[]): Promise<void> {
+async function upsertRow(
+  tab: string,
+  headers: string[],
+  row: string[],
+  colCount = headers.length
+): Promise<void> {
   const sheets = getSheetsClient();
   const { googleSheetsSpreadsheetId } = getConfig();
   if (!sheets || !googleSheetsSpreadsheetId) return;
 
-  await ensureHeaders(tab, headers);
+  await ensureHeaders(tab, headers, colCount);
 
-  const id = Number(row[0]);
-  const existingRow = await findRowById(tab, id);
+  const key = row[0];
+  const existingRow = await findRowByColA(tab, key);
+  const endCol = String.fromCharCode(64 + colCount);
 
   if (existingRow) {
     await sheets.spreadsheets.values.update({
       spreadsheetId: googleSheetsSpreadsheetId,
-      range: `${tab}!A${existingRow}:M${existingRow}`,
+      range: `${tab}!A${existingRow}:${endCol}${existingRow}`,
       valueInputOption: "RAW",
       requestBody: { values: [row] },
     });
@@ -187,7 +219,7 @@ async function upsertRow(tab: string, headers: string[], row: string[]): Promise
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: googleSheetsSpreadsheetId,
-    range: `${tab}!A:M`,
+    range: `${tab}!A:${endCol}`,
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [row] },
@@ -197,13 +229,19 @@ async function upsertRow(tab: string, headers: string[], row: string[]): Promise
 export async function syncBookingToSheet(booking: Booking): Promise<void> {
   if (!isConfigured()) return;
   const { googleSheetsBookingsTab } = getConfig();
-  await upsertRow(googleSheetsBookingsTab, BOOKING_HEADERS, bookingToRow(booking));
+  await upsertRow(googleSheetsBookingsTab, BOOKING_HEADERS, bookingToRow(booking), 13);
 }
 
 export async function syncPurchaseToSheet(purchase: Purchase): Promise<void> {
   if (!isConfigured()) return;
   const { googleSheetsPurchasesTab } = getConfig();
-  await upsertRow(googleSheetsPurchasesTab, PURCHASE_HEADERS, purchaseToRow(purchase));
+  await upsertRow(googleSheetsPurchasesTab, PURCHASE_HEADERS, purchaseToRow(purchase), 13);
+}
+
+export async function syncMemberToSheet(member: Member): Promise<void> {
+  if (!isConfigured()) return;
+  const { googleSheetsMembersTab } = getConfig();
+  await upsertRow(googleSheetsMembersTab, MEMBER_HEADERS, memberToRow(member), 5);
 }
 
 export function syncBookingToSheetSafe(booking: Booking): void {
@@ -215,6 +253,12 @@ export function syncBookingToSheetSafe(booking: Booking): void {
 export function syncPurchaseToSheetSafe(purchase: Purchase): void {
   syncPurchaseToSheet(purchase).catch((err) => {
     console.error("[Google Sheets] sync purchase failed:", purchase.id, err);
+  });
+}
+
+export function syncMemberToSheetSafe(member: Member): void {
+  syncMemberToSheet(member).catch((err) => {
+    console.error("[Google Sheets] sync member failed:", member.line_user_id, err);
   });
 }
 

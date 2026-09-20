@@ -1129,12 +1129,12 @@ body {
 }
 
 .location-map-wrap {
-  margin: 12px 0;
+  margin: 0;
 }
 
 .location-map {
   width: 100%;
-  max-width: 320px;
+  max-width: 100%;
   height: auto;
   display: block;
   margin: 0 auto;
@@ -1143,10 +1143,12 @@ body {
   border-radius: 8px;
 }
 
-.location-map-note {
-  font-size: 0.82rem;
-  color: #888;
-  margin: 8px 0 0;
+.info-card-venue {
+  padding-top: 12px;
+}
+
+.info-card-venue .store-link {
+  margin-top: 12px;
 }
 
 .plan-header-inline {

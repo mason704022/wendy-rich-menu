@@ -89,11 +89,7 @@ export function CoursesPage() {
         </dl>
       </section>
 
-      <section className="info-card">
-        <h3>上課地點</h3>
-        <p>
-          <strong>{content.venue.name}</strong> · {content.venue.address}
-        </p>
+      <section className="info-card info-card-venue">
         <LocationMap />
         <a className="store-link" href={content.venue.mapUrl} target="_blank" rel="noreferrer">
           在 Google 地圖開啟

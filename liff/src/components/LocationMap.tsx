@@ -13,7 +13,7 @@ function VerticalLabel({
   fontSize?: number;
   textAnchor?: "middle" | "start" | "end";
 }) {
-  const step = fontSize * 2;
+  const step = fontSize;
 
   return (
     <text
@@ -45,7 +45,7 @@ function HorizontalLabel({
   fontSize?: number;
 }) {
   const chars = text.split("");
-  const step = fontSize * 2;
+  const step = fontSize;
   const totalWidth = fontSize + (chars.length - 1) * step;
   const startX = x - totalWidth / 2 + fontSize / 2;
 
@@ -61,12 +61,12 @@ function HorizontalLabel({
 }
 
 function verticalLabelStartY(text: string, fontSize: number, centerY: number) {
-  const step = fontSize * 2;
+  const step = fontSize;
   const totalHeight = fontSize + (text.length - 1) * step;
   return centerY - totalHeight / 2 + fontSize * 0.35;
 }
 
-function LocationPin({ x, y, scale = 0.55 }: { x: number; y: number; scale?: number }) {
+function LocationPin({ x, y, scale = 1.1 }: { x: number; y: number; scale?: number }) {
   return (
     <g transform={`translate(${x}, ${y}) scale(${scale}) translate(-12, -24)`}>
       <path
@@ -125,7 +125,7 @@ export function LocationMap() {
   const roadBottom = circleBottom - contentOffsetY;
 
   const road = "#fff";
-  const roadW = 15;
+  const roadW = 30;
 
   const qiedongX = 72;
   const jingguoX = 208;
@@ -166,23 +166,23 @@ export function LocationMap() {
             />
 
             {/* 92巷 */}
-            <line x1={118} y1={128} x2={208} y2={128} stroke={road} strokeWidth={10} />
+            <line x1={118} y1={128} x2={208} y2={128} stroke={road} strokeWidth={20} />
 
-            {/* 路名 — 置於白色道路中央，字距留一字空白 */}
+            {/* 路名 — 置於白色道路中央，字距縮半 */}
             <VerticalLabel
               x={qiedongX}
-              y={verticalLabelStartY("茄苳景觀大道", 9, 140)}
+              y={verticalLabelStartY("茄苳景觀大道", 18, 140)}
               text="茄苳景觀大道"
-              fontSize={9}
+              fontSize={18}
             />
             <VerticalLabel
               x={jingguoX}
-              y={verticalLabelStartY("經國路三段", 10, 140)}
+              y={verticalLabelStartY("經國路三段", 20, 140)}
               text="經國路三段"
-              fontSize={10}
+              fontSize={20}
             />
-            <HorizontalLabel x={140} y={223} text="中華路四段" fontSize={10} />
-            <text x={168} y={132} textAnchor="middle" fill="#111" fontSize="9" fontWeight="800">
+            <HorizontalLabel x={140} y={223} text="中華路四段" fontSize={20} />
+            <text x={168} y={132} textAnchor="middle" fill="#111" fontSize="18" fontWeight="800">
               92巷
             </text>
 

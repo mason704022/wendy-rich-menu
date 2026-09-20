@@ -470,7 +470,7 @@ export function AdminThemesPanel({ adminQuery, lineUserId, onMessage }: Props) {
         />
       )}
 
-      <h2 className="admin-section-title">單堂特別主題</h2>
+      <h2 className="admin-section-title">單堂節慶體驗主題</h2>
       {overrides.map((o) => (
         <OverrideEditor
           key={`${o.slotDate}-${o.startTime}-${reloadKey}`}

@@ -1,4 +1,9 @@
 import { getDb } from "../db/index.js";
+import {
+  formatAgeRange,
+  formatOccupation,
+  formatResidence,
+} from "./memberProfileLabels.js";
 
 export interface Member {
   line_user_id: string;
@@ -8,6 +13,21 @@ export interface Member {
   total_sessions: number;
   remaining_sessions: number;
   created_at: string;
+  age_range: string;
+  occupation: string;
+  occupation_other: string;
+  residence_kind: string;
+  residence_district: string;
+  residence_other: string;
+}
+
+export interface MemberProfileInput {
+  ageRange: string;
+  occupation: string;
+  occupationOther?: string;
+  residenceKind: "hsinchu" | "other";
+  residenceDistrict?: string;
+  residenceOther?: string;
 }
 
 export function normalizePhone(phone: string): string {
@@ -44,12 +64,44 @@ export function getMember(lineUserId: string): Member | undefined {
     .get(lineUserId) as Member | undefined;
 }
 
+export function memberProfileSummary(member: Member) {
+  return {
+    ageRange: member.age_range,
+    ageLabel: formatAgeRange(member.age_range),
+    occupation: member.occupation,
+    occupationLabel: formatOccupation(member.occupation, member.occupation_other),
+    residenceLabel: formatResidence(
+      member.residence_kind,
+      member.residence_district,
+      member.residence_other
+    ),
+  };
+}
+
+function validateProfileInput(profile: MemberProfileInput) {
+  if (!profile.ageRange) throw new Error("AGE_RANGE_REQUIRED");
+  if (!profile.occupation) throw new Error("OCCUPATION_REQUIRED");
+  if (profile.occupation === "other" && !profile.occupationOther?.trim()) {
+    throw new Error("OCCUPATION_OTHER_REQUIRED");
+  }
+  if (!profile.residenceKind) throw new Error("RESIDENCE_REQUIRED");
+  if (profile.residenceKind === "hsinchu" && !profile.residenceDistrict) {
+    throw new Error("RESIDENCE_DISTRICT_REQUIRED");
+  }
+  if (profile.residenceKind === "other" && !profile.residenceOther?.trim()) {
+    throw new Error("RESIDENCE_OTHER_REQUIRED");
+  }
+}
+
 export function registerMember(input: {
   lineUserId: string;
   displayName: string;
   name: string;
   phone: string;
+  profile: MemberProfileInput;
 }): { member: Member; isNew: boolean } {
+  validateProfileInput(input.profile);
+
   const duplicate = findMemberByPhone(input.phone, input.lineUserId);
   if (duplicate) {
     throw new Error("PHONE_ALREADY_REGISTERED");
@@ -57,19 +109,73 @@ export function registerMember(input: {
 
   const db = getDb();
   const existing = getMember(input.lineUserId);
+  const profileFields = [
+    input.profile.ageRange,
+    input.profile.occupation,
+    input.profile.occupationOther?.trim() ?? "",
+    input.profile.residenceKind,
+    input.profile.residenceKind === "hsinchu" ? (input.profile.residenceDistrict ?? "") : "",
+    input.profile.residenceKind === "other" ? (input.profile.residenceOther?.trim() ?? "") : "",
+  ];
+
   if (existing) {
     db.prepare(
-      `UPDATE members SET display_name = ?, name = ?, phone = ? WHERE line_user_id = ?`
-    ).run(input.displayName, input.name, input.phone, input.lineUserId);
+      `UPDATE members SET display_name = ?, name = ?, phone = ?,
+       age_range = ?, occupation = ?, occupation_other = ?,
+       residence_kind = ?, residence_district = ?, residence_other = ?
+       WHERE line_user_id = ?`
+    ).run(
+      input.displayName,
+      input.name,
+      input.phone,
+      ...profileFields,
+      input.lineUserId
+    );
     return { member: getMember(input.lineUserId)!, isNew: false };
   }
 
   db.prepare(
-    `INSERT INTO members (line_user_id, display_name, name, phone)
-     VALUES (?, ?, ?, ?)`
-  ).run(input.lineUserId, input.displayName, input.name, input.phone);
+    `INSERT INTO members (
+       line_user_id, display_name, name, phone,
+       age_range, occupation, occupation_other,
+       residence_kind, residence_district, residence_other
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    input.lineUserId,
+    input.displayName,
+    input.name,
+    input.phone,
+    ...profileFields
+  );
 
   return { member: getMember(input.lineUserId)!, isNew: true };
+}
+
+export function updateMemberProfile(
+  lineUserId: string,
+  profile: MemberProfileInput
+): Member {
+  validateProfileInput(profile);
+  const db = getDb();
+  const member = getMember(lineUserId);
+  if (!member) throw new Error("NOT_REGISTERED");
+
+  db.prepare(
+    `UPDATE members SET
+       age_range = ?, occupation = ?, occupation_other = ?,
+       residence_kind = ?, residence_district = ?, residence_other = ?
+     WHERE line_user_id = ?`
+  ).run(
+    profile.ageRange,
+    profile.occupation,
+    profile.occupationOther?.trim() ?? "",
+    profile.residenceKind,
+    profile.residenceKind === "hsinchu" ? (profile.residenceDistrict ?? "") : "",
+    profile.residenceKind === "other" ? (profile.residenceOther?.trim() ?? "") : "",
+    lineUserId
+  );
+
+  return getMember(lineUserId)!;
 }
 
 export function addSessions(lineUserId: string, sessions: number) {

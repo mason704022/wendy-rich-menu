@@ -1076,6 +1076,11 @@ body {
   white-space: pre-line;
 }
 
+.terms-text-red {
+  color: #c0392b;
+  font-weight: 600;
+}
+
 .checkout-step {
   background: var(--white);
   border: 1px solid var(--border-light);
@@ -1120,6 +1125,72 @@ body {
 .checkout-submit-wrap {
   margin-top: 8px;
   padding-bottom: 80px;
+}
+
+.radio-fieldset {
+  border: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.radio-legend {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--taupe-dark);
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.radio-group-stack {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.radio-subgroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 4px 0 8px 1.25rem;
+}
+
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.radio-option input {
+  accent-color: var(--purple);
+  width: 16px;
+  height: 16px;
+}
+
+.coffee-temp-fieldset {
+  margin-top: 4px;
+}
+
+.member-profile-edit {
+  margin: 12px 0;
+}
+
+.member-profile-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.member-profile-edit-btn {
+  margin-top: 8px;
+  width: auto;
 }
 
 .plan-error {

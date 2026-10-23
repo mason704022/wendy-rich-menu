@@ -45,6 +45,7 @@ bookingsRouter.post("/", (req, res) => {
     slotDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     startTime: z.string().min(4),
     coffeeItemId: z.string().min(1),
+    coffeeTemperature: z.enum(["hot", "ice"]).optional(),
   });
 
   const parsed = schema.safeParse(req.body);

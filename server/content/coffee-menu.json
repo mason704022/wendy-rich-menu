@@ -1,10 +1,23 @@
 {
-  "title": "選擇咖啡品項",
+  "title": "選擇飲品",
   "items": [
-    { "id": "americano", "name": "美式咖啡", "description": "经典清爽" },
-    { "id": "latte", "name": "拿鐵咖啡", "description": "奶香溫潤" },
-    { "id": "pour-over", "name": "手沖單品", "description": "當日豆子" },
-    { "id": "cappuccino", "name": "卡布奇諾", "description": "綿密奶泡" },
-    { "id": "seasonal", "name": "季節限定", "description": "店內推薦" }
+    { "id": "milk-cap-jinxuan", "name": "奶蓋金萱", "description": "" },
+    { "id": "fresh-milk-tea", "name": "鮮奶茶", "description": "", "hotCold": true },
+    { "id": "honey-lemon-chia", "name": "蜂蜜檸檬奇亞籽", "description": "" },
+    { "id": "black-coffee", "name": "黑咖啡", "description": "", "hotCold": true },
+    { "id": "latte", "name": "拿鐵", "description": "", "hotCold": true },
+    { "id": "mocha", "name": "摩卡咖啡", "description": "", "hotCold": true },
+    { "id": "dirty-coffee", "name": "髒髒咖啡", "description": "" },
+    { "id": "guobao-tea", "name": "國寶茶", "description": "" },
+    { "id": "rose-latte", "name": "玫瑰拿鐵", "description": "", "hotCold": true },
+    { "id": "lemon-coffee", "name": "檸檬咖啡", "description": "" },
+    { "id": "coconut-black", "name": "椰子黑咖啡", "description": "" },
+    { "id": "guava-coffee", "name": "紅心芭樂咖啡", "description": "" },
+    {
+      "id": "honey-cinnamon-cap",
+      "name": "蜂蜜肉桂奶蓋咖啡",
+      "description": "",
+      "hotCold": true
+    }
   ]
 }

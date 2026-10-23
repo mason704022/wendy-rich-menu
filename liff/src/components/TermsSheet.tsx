@@ -7,6 +7,21 @@ export interface PurchaseTerms {
   agreeLabel?: string;
 }
 
+function renderTermsSection(text: string) {
+  const parts = text.split(/(\[\[red\]\][\s\S]*?\[\[\/red\]\])/g);
+  return parts.map((part, index) => {
+    const match = part.match(/^\[\[red\]\]([\s\S]*?)\[\[\/red\]\]$/);
+    if (match) {
+      return (
+        <span key={index} className="terms-text-red">
+          {match[1]}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 interface Props {
   terms: PurchaseTerms;
   open: boolean;
@@ -35,7 +50,7 @@ export function TermsSheet({ terms, open, onClose, onNext }: Props) {
           ))}
           <ul className="sheet-list sheet-list-terms">
             {terms.sections.map((s) => (
-              <li key={s}>{s}</li>
+              <li key={s}>{renderTermsSection(s)}</li>
             ))}
           </ul>
         </div>

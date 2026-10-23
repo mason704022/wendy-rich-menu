@@ -114,20 +114,25 @@ export function BookingPage() {
     setError("");
   }
 
-  async function confirmBook(coffeeItemId: string) {
+  async function confirmBook(
+    coffeeItemId: string,
+    coffeeTemperature?: "hot" | "ice"
+  ) {
     if (!pendingSlot) return;
     setBookingLoading(true);
     setError("");
     setSuccess("");
     try {
+      const body: Record<string, string> = {
+        lineUserId: profile.userId,
+        slotDate: pendingSlot.slotDate,
+        startTime: pendingSlot.startTime,
+        coffeeItemId,
+      };
+      if (coffeeTemperature) body.coffeeTemperature = coffeeTemperature;
       const res = await api<{ booking: Booking }>("/bookings/", {
         method: "POST",
-        body: JSON.stringify({
-          lineUserId: profile.userId,
-          slotDate: pendingSlot.slotDate,
-          startTime: pendingSlot.startTime,
-          coffeeItemId,
-        }),
+        body: JSON.stringify(body),
       });
       const statusText =
         res.booking.status === "waitlist" ? "（備取）" : "（正取）";
@@ -212,7 +217,7 @@ export function BookingPage() {
                   {!b.can_cancel && " · 開課前 24 小時內不可取消"}
                 </p>
                 {b.coffee_name && (
-                  <p className="slot-meta">咖啡品項：{b.coffee_name}</p>
+                  <p className="slot-meta">飲品：{b.coffee_name}</p>
                 )}
                 <button
                   className="btn btn-outline"
@@ -295,7 +300,7 @@ export function BookingPage() {
                   {pendingCancel.end_time}
                 </h3>
                 {pendingCancel.coffee_name && (
-                  <p className="slot-meta">咖啡品項：{pendingCancel.coffee_name}</p>
+                  <p className="slot-meta">飲品：{pendingCancel.coffee_name}</p>
                 )}
               </div>
             </div>

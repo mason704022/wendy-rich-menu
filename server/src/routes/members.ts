@@ -4,13 +4,24 @@ import { loadJson } from "../config.js";
 import {
   findMemberByPhone,
   getMember,
+  memberProfileSummary,
   registerMember,
   updateMemberName,
+  updateMemberProfile,
 } from "../services/memberService.js";
 import { syncMemberToSheetSafe } from "../services/googleSheetsService.js";
 import { sendOtp, verifyOtp } from "../services/otpService.js";
 
 export const membersRouter = Router();
+
+const profileSchema = z.object({
+  ageRange: z.enum(["20-30", "30-40", "40-50", "50+"]),
+  occupation: z.enum(["student", "freelance", "service", "education", "medical", "other"]),
+  occupationOther: z.string().optional(),
+  residenceKind: z.enum(["hsinchu", "other"]),
+  residenceDistrict: z.enum(["north", "east", "xiangshan"]).optional(),
+  residenceOther: z.string().optional(),
+});
 
 membersRouter.get("/content/terms", (_req, res) => {
   res.json(loadJson("terms.json"));
@@ -44,7 +55,7 @@ membersRouter.get("/:lineUserId", (req, res) => {
   if (!member) {
     return res.status(404).json({ registered: false });
   }
-  res.json({ registered: true, member });
+  res.json({ registered: true, member, profile: memberProfileSummary(member) });
 });
 
 membersRouter.post("/register", (req, res) => {
@@ -54,6 +65,7 @@ membersRouter.post("/register", (req, res) => {
     name: z.string().min(1),
     phone: z.string().min(8),
     otpCode: z.string().length(6),
+    profile: profileSchema,
   });
 
   const parsed = schema.safeParse(req.body);
@@ -65,10 +77,34 @@ membersRouter.post("/register", (req, res) => {
     return res.status(400).json({ error: "INVALID_OTP", message: "簡訊驗證碼錯誤或已過期" });
   }
 
+  const profile = parsed.data.profile;
+  if (profile.occupation === "other" && !profile.occupationOther?.trim()) {
+    return res.status(400).json({ error: "OCCUPATION_OTHER_REQUIRED" });
+  }
+  if (profile.residenceKind === "hsinchu" && !profile.residenceDistrict) {
+    return res.status(400).json({ error: "RESIDENCE_DISTRICT_REQUIRED" });
+  }
+  if (profile.residenceKind === "other" && !profile.residenceOther?.trim()) {
+    return res.status(400).json({ error: "RESIDENCE_OTHER_REQUIRED" });
+  }
+
   try {
-    const { member, isNew } = registerMember(parsed.data);
+    const { member, isNew } = registerMember({
+      lineUserId: parsed.data.lineUserId,
+      displayName: parsed.data.displayName,
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      profile: {
+        ageRange: profile.ageRange,
+        occupation: profile.occupation,
+        occupationOther: profile.occupationOther,
+        residenceKind: profile.residenceKind,
+        residenceDistrict: profile.residenceDistrict,
+        residenceOther: profile.residenceOther,
+      },
+    });
     syncMemberToSheetSafe(member);
-    res.json({ member, isNew });
+    res.json({ member, isNew, profile: memberProfileSummary(member) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     if (message === "PHONE_ALREADY_REGISTERED") {
@@ -101,17 +137,62 @@ membersRouter.patch("/:lineUserId/name", (req, res) => {
   }
 });
 
+membersRouter.patch("/:lineUserId/profile", (req, res) => {
+  const schema = z.object({ profile: profileSchema });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  const profile = parsed.data.profile;
+  if (profile.occupation === "other" && !profile.occupationOther?.trim()) {
+    return res.status(400).json({ error: "OCCUPATION_OTHER_REQUIRED" });
+  }
+  if (profile.residenceKind === "hsinchu" && !profile.residenceDistrict) {
+    return res.status(400).json({ error: "RESIDENCE_DISTRICT_REQUIRED" });
+  }
+  if (profile.residenceKind === "other" && !profile.residenceOther?.trim()) {
+    return res.status(400).json({ error: "RESIDENCE_OTHER_REQUIRED" });
+  }
+
+  try {
+    const member = updateMemberProfile(req.params.lineUserId, {
+      ageRange: profile.ageRange,
+      occupation: profile.occupation,
+      occupationOther: profile.occupationOther,
+      residenceKind: profile.residenceKind,
+      residenceDistrict: profile.residenceDistrict,
+      residenceOther: profile.residenceOther,
+    });
+    syncMemberToSheetSafe(member);
+    res.json({ member, profile: memberProfileSummary(member) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN";
+    res.status(400).json({ error: message });
+  }
+});
+
 membersRouter.get("/:lineUserId/summary", (req, res) => {
   const member = getMember(req.params.lineUserId);
   if (!member) {
     return res.status(404).json({ error: "NOT_REGISTERED" });
   }
 
+  const profile = memberProfileSummary(member);
   res.json({
     name: member.name,
     phone: member.phone,
     totalSessions: member.total_sessions,
     remainingSessions: member.remaining_sessions,
     memberSince: member.created_at,
+    ageLabel: profile.ageLabel,
+    occupationLabel: profile.occupationLabel,
+    residenceLabel: profile.residenceLabel,
+    ageRange: member.age_range,
+    occupation: member.occupation,
+    occupationOther: member.occupation_other,
+    residenceKind: member.residence_kind,
+    residenceDistrict: member.residence_district,
+    residenceOther: member.residence_other,
   });
 });

@@ -1,6 +1,6 @@
 import { getDb } from "../db/index.js";
 import { canBookSlot, canCancelBooking } from "./bookingTimeUtils.js";
-import { getCoffeeItem } from "./coffeeMenuService.js";
+import { formatCoffeeDisplayName, getCoffeeItem } from "./coffeeMenuService.js";
 import { syncBookingToSheetSafe } from "./googleSheetsService.js";
 import { deductSession, getMember, refundSession } from "./memberService.js";
 import { resolveSessionTheme } from "./sessionThemeService.js";
@@ -44,6 +44,7 @@ export interface Booking {
   end_time: string;
   status: "confirmed" | "waitlist" | "cancelled";
   coffee_item_id: string;
+  coffee_temperature: string;
   created_at: string;
 }
 
@@ -186,17 +187,29 @@ export function getAvailabilityRange(
   return results;
 }
 
+function coffeeNameForBooking(booking: Booking): string {
+  if (!booking.coffee_item_id) return "";
+  return formatCoffeeDisplayName(booking.coffee_item_id, booking.coffee_temperature);
+}
+
 export function createBooking(input: {
   lineUserId: string;
   slotDate: string;
   startTime: string;
   coffeeItemId: string;
+  coffeeTemperature?: "hot" | "ice";
 }): Booking {
   const member = getMember(input.lineUserId);
   if (!member) throw new Error("NOT_REGISTERED");
 
   const coffee = getCoffeeItem(input.coffeeItemId);
   if (!coffee) throw new Error("INVALID_COFFEE_ITEM");
+  if (coffee.hotCold && !input.coffeeTemperature) {
+    throw new Error("COFFEE_TEMPERATURE_REQUIRED");
+  }
+  if (!coffee.hotCold && input.coffeeTemperature) {
+    throw new Error("INVALID_COFFEE_TEMPERATURE");
+  }
 
   const slots = getAvailabilityForDate(input.slotDate, input.lineUserId);
   const slot = slots.find((s) => s.startTime === input.startTime);
@@ -223,8 +236,8 @@ export function createBooking(input: {
   try {
     const result = db
       .prepare(
-        `INSERT INTO bookings (line_user_id, slot_date, weekday, start_time, end_time, status, coffee_item_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO bookings (line_user_id, slot_date, weekday, start_time, end_time, status, coffee_item_id, coffee_temperature)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.lineUserId,
@@ -233,7 +246,8 @@ export function createBooking(input: {
         slot.startTime,
         slot.endTime,
         status,
-        input.coffeeItemId
+        input.coffeeItemId,
+        input.coffeeTemperature ?? ""
       );
 
     if (status === "confirmed") {
@@ -270,7 +284,7 @@ export function listBookingsByUser(lineUserId: string): BookingWithCoffee[] {
 
   return rows.map((b) => ({
     ...b,
-    coffee_name: b.coffee_item_id ? getCoffeeItem(b.coffee_item_id)?.name ?? "" : "",
+    coffee_name: coffeeNameForBooking(b),
     can_cancel: canCancelBooking(b.slot_date, b.start_time),
   }));
 }
@@ -349,9 +363,7 @@ export function listUpcomingBookings(days: number): BookingWithMember[] {
     const member = getMember(b.line_user_id);
     return {
       ...b,
-      coffee_name: b.coffee_item_id
-        ? getCoffeeItem(b.coffee_item_id)?.name ?? ""
-        : "",
+      coffee_name: coffeeNameForBooking(b),
       member_name: member?.name ?? "",
       member_phone: member?.phone ?? "",
       can_cancel: canCancelBooking(b.slot_date, b.start_time),

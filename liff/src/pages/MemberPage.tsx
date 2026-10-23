@@ -2,6 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { LoadError, apiErrorMessage } from "../components/LoadError";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
+import {
+  MemberProfileFieldsForm,
+  emptyMemberProfileFields,
+} from "../components/MemberProfileFieldsForm";
+import {
+  validateMemberProfile,
+  type AgeRange,
+  type HsinchuDistrict,
+  type Occupation,
+  type MemberProfileFields,
+} from "../lib/memberProfileOptions";
 import { PageShell } from "../components/PageShell";
 import type { AvailableCoupon } from "../components/CouponPicker";
 
@@ -11,6 +22,26 @@ interface Summary {
   totalSessions: number;
   remainingSessions: number;
   memberSince: string;
+  ageLabel: string;
+  occupationLabel: string;
+  residenceLabel: string;
+  ageRange: string;
+  occupation: string;
+  occupationOther: string;
+  residenceKind: string;
+  residenceDistrict: string;
+  residenceOther: string;
+}
+
+function summaryToProfileFields(s: Summary): MemberProfileFields {
+  return {
+    ageRange: (s.ageRange || "") as MemberProfileFields["ageRange"],
+    occupation: (s.occupation || "") as MemberProfileFields["occupation"],
+    occupationOther: s.occupationOther ?? "",
+    residenceKind: (s.residenceKind || "") as MemberProfileFields["residenceKind"],
+    residenceDistrict: (s.residenceDistrict || "") as MemberProfileFields["residenceDistrict"],
+    residenceOther: s.residenceOther ?? "",
+  };
 }
 
 interface Booking {
@@ -32,6 +63,8 @@ export function MemberPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [myCoupons, setMyCoupons] = useState<AvailableCoupon[]>([]);
+  const [profileFields, setProfileFields] = useState(emptyMemberProfileFields());
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const loadMemberData = useCallback(() => {
     setLoading(true);
@@ -43,6 +76,7 @@ export function MemberPage() {
       .then(([s, b]) => {
         setSummary(s);
         setName(s.name);
+        setProfileFields(summaryToProfileFields(s));
         setBookings(b.bookings.slice(0, 5));
       })
       .catch((err) => setLoadError(apiErrorMessage(err)))
@@ -64,6 +98,57 @@ export function MemberPage() {
     }
     loadMemberData();
   }, [registered, loadMemberData]);
+
+  async function saveProfile() {
+    const profileError = validateMemberProfile(profileFields);
+    if (profileError) {
+      setMessage(profileError);
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    try {
+      const res = await api<{ profile: { ageLabel: string; occupationLabel: string; residenceLabel: string } }>(
+        `/members/${profile.userId}/profile`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            profile: {
+              ageRange: profileFields.ageRange as AgeRange,
+              occupation: profileFields.occupation as Occupation,
+              occupationOther: profileFields.occupationOther,
+              residenceKind: profileFields.residenceKind as "hsinchu" | "other",
+              residenceDistrict:
+                profileFields.residenceKind === "hsinchu"
+                  ? (profileFields.residenceDistrict as HsinchuDistrict)
+                  : undefined,
+              residenceOther: profileFields.residenceOther,
+            },
+          }),
+        }
+      );
+      setMessage("會員資料已更新");
+      setEditingProfile(false);
+      if (summary) {
+        setSummary({
+          ...summary,
+          ageLabel: res.profile.ageLabel,
+          occupationLabel: res.profile.occupationLabel,
+          residenceLabel: res.profile.residenceLabel,
+          ageRange: profileFields.ageRange,
+          occupation: profileFields.occupation,
+          occupationOther: profileFields.occupationOther,
+          residenceKind: profileFields.residenceKind,
+          residenceDistrict: profileFields.residenceDistrict,
+          residenceOther: profileFields.residenceOther,
+        });
+      }
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "更新失敗");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function saveName() {
     if (!name.trim()) return;
@@ -130,6 +215,58 @@ export function MemberPage() {
             </div>
           </div>
           <p>手機：{summary.phone}</p>
+          {!editingProfile ? (
+            <>
+              <p>
+                <strong>年齡：</strong>
+                {summary.ageLabel || "未填寫"}
+              </p>
+              <p>
+                <strong>職業：</strong>
+                {summary.occupationLabel || "未填寫"}
+              </p>
+              <p>
+                <strong>居住地：</strong>
+                {summary.residenceLabel || "未填寫"}
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm member-profile-edit-btn"
+                onClick={() => setEditingProfile(true)}
+              >
+                編輯年齡／職業／居住地
+              </button>
+            </>
+          ) : (
+            <div className="member-profile-edit">
+              <MemberProfileFieldsForm
+                value={profileFields}
+                onChange={setProfileFields}
+                idPrefix="member"
+              />
+              <div className="member-profile-edit-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  disabled={saving}
+                  onClick={() => {
+                    setEditingProfile(false);
+                    setProfileFields(summaryToProfileFields(summary));
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-purple btn-sm"
+                  disabled={saving}
+                  onClick={saveProfile}
+                >
+                  {saving ? "儲存中…" : "儲存資料"}
+                </button>
+              </div>
+            </div>
+          )}
           <p>
             <strong>已購買堂數：</strong>
             {summary.totalSessions} 堂
@@ -171,7 +308,7 @@ export function MemberPage() {
               </h3>
               <p className="slot-meta">
                 {b.status === "waitlist" ? "備取" : "正取"}
-                {b.coffee_name && ` · 咖啡：${b.coffee_name}`}
+                {b.coffee_name && ` · 飲品：${b.coffee_name}`}
               </p>
             </div>
           ))}

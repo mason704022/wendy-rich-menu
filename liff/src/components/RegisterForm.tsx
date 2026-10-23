@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { api, apiOptional, ApiError } from "../lib/api";
 import { getProfile } from "../lib/liff";
+import {
+  MemberProfileFieldsForm,
+  emptyMemberProfileFields,
+} from "./MemberProfileFieldsForm";
+import {
+  validateMemberProfile,
+  type AgeRange,
+  type HsinchuDistrict,
+  type Occupation,
+} from "../lib/memberProfileOptions";
 
 interface Props {
   onRegistered: () => void;
@@ -11,6 +21,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
   const profile = getProfile();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [profileFields, setProfileFields] = useState(emptyMemberProfileFields());
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [devCode, setDevCode] = useState("");
@@ -67,6 +78,11 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
       setError("請先完成手機簡訊驗證");
       return;
     }
+    const profileError = validateMemberProfile(profileFields);
+    if (profileError) {
+      setError(profileError);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -78,6 +94,17 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
           name,
           phone,
           otpCode,
+          profile: {
+            ageRange: profileFields.ageRange as AgeRange,
+            occupation: profileFields.occupation as Occupation,
+            occupationOther: profileFields.occupationOther,
+            residenceKind: profileFields.residenceKind as "hsinchu" | "other",
+            residenceDistrict:
+              profileFields.residenceKind === "hsinchu"
+                ? (profileFields.residenceDistrict as HsinchuDistrict)
+                : undefined,
+            residenceOther: profileFields.residenceOther,
+          },
         }),
       });
       onRegistered();
@@ -111,7 +138,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
       <div className="register-card">
         <h2>填寫資料</h2>
-        <p>請填寫姓名與手機，並完成簡訊驗證後即可繼續購課。</p>
+        <p>請填寫會員資料並完成簡訊驗證。</p>
         {error && <div className="error-box">{error}</div>}
         {devCode && (
           <div className="dev-otp-hint">【開發模式】驗證碼：{devCode}</div>
@@ -122,6 +149,13 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
             <label>姓名</label>
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
+
+          <MemberProfileFieldsForm
+            value={profileFields}
+            onChange={setProfileFields}
+            idPrefix="reg"
+          />
+
           <div className="form-group">
             <label>手機</label>
             <div className="phone-row">

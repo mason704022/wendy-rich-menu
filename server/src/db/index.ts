@@ -115,6 +115,30 @@ function migrateSchema(db: DatabaseSync) {
   if (!bookingNames.has("coffee_item_id")) {
     db.exec(`ALTER TABLE bookings ADD COLUMN coffee_item_id TEXT NOT NULL DEFAULT ''`);
   }
+  if (!bookingNames.has("coffee_temperature")) {
+    db.exec(`ALTER TABLE bookings ADD COLUMN coffee_temperature TEXT NOT NULL DEFAULT ''`);
+  }
+
+  const memberCols = db.prepare("PRAGMA table_info(members)").all() as Array<{ name: string }>;
+  const memberNames = new Set(memberCols.map((c) => c.name));
+  if (!memberNames.has("age_range")) {
+    db.exec(`ALTER TABLE members ADD COLUMN age_range TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!memberNames.has("occupation")) {
+    db.exec(`ALTER TABLE members ADD COLUMN occupation TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!memberNames.has("occupation_other")) {
+    db.exec(`ALTER TABLE members ADD COLUMN occupation_other TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!memberNames.has("residence_kind")) {
+    db.exec(`ALTER TABLE members ADD COLUMN residence_kind TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!memberNames.has("residence_district")) {
+    db.exec(`ALTER TABLE members ADD COLUMN residence_district TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!memberNames.has("residence_other")) {
+    db.exec(`ALTER TABLE members ADD COLUMN residence_other TEXT NOT NULL DEFAULT ''`);
+  }
 
   if (!names.has("original_amount")) {
     db.exec(`ALTER TABLE purchases ADD COLUMN original_amount INTEGER`);

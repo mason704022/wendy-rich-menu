@@ -2,8 +2,13 @@ import fs from "fs";
 import { google, sheets_v4 } from "googleapis";
 import { getConfig, resolveServerPath } from "../config.js";
 import type { Booking } from "./bookingService.js";
-import { getCoffeeItem } from "./coffeeMenuService.js";
-import { getMember, listAllMembers, type Member } from "./memberService.js";
+import { formatCoffeeDisplayName } from "./coffeeMenuService.js";
+import {
+  getMember,
+  listAllMembers,
+  memberProfileSummary,
+  type Member,
+} from "./memberService.js";
 import type { Purchase } from "./purchaseService.js";
 import { getCouponNameForPurchase } from "./couponService.js";
 
@@ -41,6 +46,9 @@ const MEMBER_HEADERS = [
   "姓名",
   "手機",
   "LINE顯示名稱",
+  "年齡",
+  "職業",
+  "居住地",
   "註冊時間",
 ];
 
@@ -92,7 +100,7 @@ function purchaseStatusLabel(status: Purchase["status"]): string {
 function bookingToRow(booking: Booking): string[] {
   const member = getMember(booking.line_user_id);
   const coffeeName = booking.coffee_item_id
-    ? getCoffeeItem(booking.coffee_item_id)?.name ?? booking.coffee_item_id
+    ? formatCoffeeDisplayName(booking.coffee_item_id, booking.coffee_temperature)
     : "";
   const updatedAt = new Date().toISOString().replace("T", " ").slice(0, 19);
 
@@ -133,11 +141,15 @@ function purchaseToRow(purchase: Purchase): string[] {
 }
 
 function memberToRow(member: Member): string[] {
+  const profile = memberProfileSummary(member);
   return [
     member.line_user_id,
     member.name,
     member.phone,
     member.display_name,
+    profile.ageLabel,
+    profile.occupationLabel,
+    profile.residenceLabel,
     member.created_at,
   ];
 }
@@ -241,7 +253,7 @@ export async function syncPurchaseToSheet(purchase: Purchase): Promise<void> {
 export async function syncMemberToSheet(member: Member): Promise<void> {
   if (!isConfigured()) return;
   const { googleSheetsMembersTab } = getConfig();
-  await upsertRow(googleSheetsMembersTab, MEMBER_HEADERS, memberToRow(member), 5);
+  await upsertRow(googleSheetsMembersTab, MEMBER_HEADERS, memberToRow(member), 8);
 }
 
 export function syncBookingToSheetSafe(booking: Booking): void {

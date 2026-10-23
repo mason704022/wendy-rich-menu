@@ -5,7 +5,7 @@ import {
   listActiveBookingsForSlot,
   slotLabelForBooking,
 } from "./bookingService.js";
-import { getCoffeeItem } from "./coffeeMenuService.js";
+import { formatCoffeeDisplayName } from "./coffeeMenuService.js";
 import { getMember } from "./memberService.js";
 
 /** 正取人數達此門檻時，通知該時段所有已預約會員開課 */
@@ -18,7 +18,7 @@ function formatSlotLine(booking: Booking): string {
 
 export async function notifyBookingSuccess(booking: Booking): Promise<void> {
   const coffeeName = booking.coffee_item_id
-    ? getCoffeeItem(booking.coffee_item_id)?.name ?? ""
+    ? formatCoffeeDisplayName(booking.coffee_item_id, booking.coffee_temperature)
     : "";
   const statusLabel = booking.status === "waitlist" ? "備取" : "正取";
 
@@ -80,7 +80,7 @@ function formatRosterLines(slotDate: string, startTime: string): string[] {
   return bookings.map((b) => {
     const member = getMember(b.line_user_id);
     const coffee = b.coffee_item_id
-      ? getCoffeeItem(b.coffee_item_id)?.name ?? ""
+      ? formatCoffeeDisplayName(b.coffee_item_id, b.coffee_temperature)
       : "";
     const status = b.status === "waitlist" ? "備取" : "正取";
     const coffeePart = coffee ? ` · ${coffee}` : "";
@@ -91,7 +91,7 @@ function formatRosterLines(slotDate: string, startTime: string): string[] {
 export async function notifyAdminNewBooking(booking: Booking): Promise<void> {
   const member = getMember(booking.line_user_id);
   const coffeeName = booking.coffee_item_id
-    ? getCoffeeItem(booking.coffee_item_id)?.name ?? ""
+    ? formatCoffeeDisplayName(booking.coffee_item_id, booking.coffee_temperature)
     : "";
   const statusLabel = booking.status === "waitlist" ? "備取" : "正取";
   const confirmed = getConfirmedCountForSlot(booking.slot_date, booking.start_time);

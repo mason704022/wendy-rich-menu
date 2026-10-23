@@ -1193,6 +1193,63 @@ body {
   width: auto;
 }
 
+.purchase-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-text-btn {
+  border: none;
+  background: transparent;
+  color: var(--purple);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 4px;
+}
+
+.header-text-btn:disabled {
+  color: var(--purple-muted);
+  cursor: not-allowed;
+}
+
+.member-info-dl {
+  margin: 0;
+}
+
+.member-info-dl div {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.member-info-dl dt {
+  min-width: 4em;
+  color: #888;
+  font-weight: 600;
+}
+
+.member-info-dl dd {
+  margin: 0;
+  color: #333;
+  flex: 1;
+}
+
+.member-info-divider {
+  border: none;
+  border-top: 1px solid var(--border-light);
+  margin: 16px 0;
+}
+
+.field-required {
+  color: #c0392b;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
 .plan-error {
   position: fixed;
   top: 12px;

@@ -74,6 +74,14 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) {
+      setError("請填寫姓名");
+      return;
+    }
+    if (!phone.trim()) {
+      setError("請填寫手機");
+      return;
+    }
     if (!otpSent || otpCode.length !== 6) {
       setError("請先完成手機簡訊驗證");
       return;
@@ -138,7 +146,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
       <div className="register-card">
         <h2>填寫資料</h2>
-        <p>請填寫會員資料並完成簡訊驗證。</p>
+        <p>以下欄位皆為必填，並須完成手機簡訊驗證。</p>
         {error && <div className="error-box">{error}</div>}
         {devCode && (
           <div className="dev-otp-hint">【開發模式】驗證碼：{devCode}</div>
@@ -146,7 +154,9 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
         <form onSubmit={submit}>
           <div className="form-group">
-            <label>姓名</label>
+            <label>
+              姓名 <span className="field-required">（必填）</span>
+            </label>
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
@@ -154,10 +164,13 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
             value={profileFields}
             onChange={setProfileFields}
             idPrefix="reg"
+            required
           />
 
           <div className="form-group">
-            <label>手機</label>
+            <label>
+              手機 <span className="field-required">（必填）</span>
+            </label>
             <div className="phone-row">
               <input
                 value={phone}
@@ -177,7 +190,9 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
             </div>
           </div>
           <div className="form-group">
-            <label>簡訊驗證碼</label>
+            <label>
+              簡訊驗證碼 <span className="field-required">（必填）</span>
+            </label>
             <input
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -190,7 +205,14 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
           <button
             className="btn btn-purple btn-lg"
             type="submit"
-            disabled={loading || !otpSent || otpCode.length !== 6}
+            disabled={
+              loading ||
+              !name.trim() ||
+              !phone.trim() ||
+              !otpSent ||
+              otpCode.length !== 6 ||
+              validateMemberProfile(profileFields) !== null
+            }
           >
             {loading ? "處理中…" : "完成註冊"}
           </button>

@@ -57,14 +57,24 @@ export function MemberPage() {
   const { registered, setRegistered, profile } = useMemberRegistered();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [originalPhone, setOriginalPhone] = useState("");
+  const [profileFields, setProfileFields] = useState(emptyMemberProfileFields());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [myCoupons, setMyCoupons] = useState<AvailableCoupon[]>([]);
-  const [profileFields, setProfileFields] = useState(emptyMemberProfileFields());
-  const [editingProfile, setEditingProfile] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [devCode, setDevCode] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const [sendingOtp, setSendingOtp] = useState(false);
+
+  const phoneChanged =
+    phone.replace(/\D/g, "") !== originalPhone.replace(/\D/g, "");
 
   const loadMemberData = useCallback(() => {
     setLoading(true);
@@ -76,6 +86,8 @@ export function MemberPage() {
       .then(([s, b]) => {
         setSummary(s);
         setName(s.name);
+        setPhone(s.phone);
+        setOriginalPhone(s.phone);
         setProfileFields(summaryToProfileFields(s));
         setBookings(b.bookings.slice(0, 5));
       })
@@ -99,39 +111,107 @@ export function MemberPage() {
     loadMemberData();
   }, [registered, loadMemberData]);
 
-  async function saveProfile() {
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
+
+  function resetEditForm() {
+    if (!summary) return;
+    setName(summary.name);
+    setPhone(summary.phone);
+    setOriginalPhone(summary.phone);
+    setProfileFields(summaryToProfileFields(summary));
+    setOtpCode("");
+    setOtpSent(false);
+    setDevCode("");
+  }
+
+  function startEdit() {
+    resetEditForm();
+    setEditing(true);
+    setMessage("");
+  }
+
+  function cancelEdit() {
+    resetEditForm();
+    setEditing(false);
+    setMessage("");
+  }
+
+  async function sendOtp() {
+    if (!phone.trim()) {
+      setMessage("請先填寫手機號碼");
+      return;
+    }
+    setSendingOtp(true);
+    setMessage("");
+    try {
+      const res = await api<{ ok: boolean; devCode?: string }>("/members/send-otp", {
+        method: "POST",
+        body: JSON.stringify({ phone }),
+      });
+      setOtpSent(true);
+      setCooldown(60);
+      if (res.devCode) setDevCode(res.devCode);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "發送失敗");
+    } finally {
+      setSendingOtp(false);
+    }
+  }
+
+  async function saveDetails() {
+    if (!name.trim()) {
+      setMessage("請填寫姓名");
+      return;
+    }
     const profileError = validateMemberProfile(profileFields);
     if (profileError) {
       setMessage(profileError);
       return;
     }
+    if (phoneChanged && (!otpSent || otpCode.length !== 6)) {
+      setMessage("變更手機請先完成簡訊驗證");
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     try {
-      const res = await api<{ profile: { ageLabel: string; occupationLabel: string; residenceLabel: string } }>(
-        `/members/${profile.userId}/profile`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            profile: {
-              ageRange: profileFields.ageRange as AgeRange,
-              occupation: profileFields.occupation as Occupation,
-              occupationOther: profileFields.occupationOther,
-              residenceKind: profileFields.residenceKind as "hsinchu" | "other",
-              residenceDistrict:
-                profileFields.residenceKind === "hsinchu"
-                  ? (profileFields.residenceDistrict as HsinchuDistrict)
-                  : undefined,
-              residenceOther: profileFields.residenceOther,
-            },
-          }),
-        }
-      );
+      const body: Record<string, unknown> = {
+        name: name.trim(),
+        phone: phone.trim(),
+        profile: {
+          ageRange: profileFields.ageRange as AgeRange,
+          occupation: profileFields.occupation as Occupation,
+          occupationOther: profileFields.occupationOther,
+          residenceKind: profileFields.residenceKind as "hsinchu" | "other",
+          residenceDistrict:
+            profileFields.residenceKind === "hsinchu"
+              ? (profileFields.residenceDistrict as HsinchuDistrict)
+              : undefined,
+          residenceOther: profileFields.residenceOther,
+        },
+      };
+      if (phoneChanged) body.otpCode = otpCode;
+
+      const res = await api<{
+        profile: { ageLabel: string; occupationLabel: string; residenceLabel: string };
+        member: { name: string; phone: string };
+      }>(`/members/${profile.userId}/details`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+
       setMessage("會員資料已更新");
-      setEditingProfile(false);
+      setEditing(false);
       if (summary) {
         setSummary({
           ...summary,
+          name: res.member.name,
+          phone: res.member.phone,
           ageLabel: res.profile.ageLabel,
           occupationLabel: res.profile.occupationLabel,
           residenceLabel: res.profile.residenceLabel,
@@ -142,25 +222,8 @@ export function MemberPage() {
           residenceDistrict: profileFields.residenceDistrict,
           residenceOther: profileFields.residenceOther,
         });
+        setOriginalPhone(res.member.phone);
       }
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "更新失敗");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function saveName() {
-    if (!name.trim()) return;
-    setSaving(true);
-    setMessage("");
-    try {
-      await api(`/members/${profile.userId}/name`, {
-        method: "PATCH",
-        body: JSON.stringify({ name: name.trim() }),
-      });
-      setMessage("姓名已更新");
-      if (summary) setSummary({ ...summary, name: name.trim() });
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "更新失敗");
     } finally {
@@ -175,7 +238,7 @@ export function MemberPage() {
   if (!registered) {
     return (
       <PageShell title="會員資訊" leftAlign showMemberLink={false}>
-        <p className="page-hint">請先完成會員註冊</p>
+        <p className="page-hint">請先完成會員註冊（以下欄位皆為必填）</p>
         <p className="slot-meta">您的 LINE ID：{profile.userId}</p>
         <RegisterForm onRegistered={() => setRegistered(true)} />
       </PageShell>
@@ -190,8 +253,23 @@ export function MemberPage() {
     );
   }
 
+  const headerAction = editing ? (
+    <button type="button" className="header-text-btn" onClick={cancelEdit} disabled={saving}>
+      取消
+    </button>
+  ) : (
+    <button type="button" className="header-text-btn" onClick={startEdit}>
+      編輯
+    </button>
+  );
+
   return (
-    <PageShell title="會員資訊" leftAlign showMemberLink={false}>
+    <PageShell
+      title="會員資訊"
+      leftAlign
+      showMemberLink={false}
+      headerAction={headerAction}
+    >
       {message && (
         <div className={message.includes("已更新") ? "success-box" : "error-box"}>
           {message}
@@ -200,73 +278,104 @@ export function MemberPage() {
 
       {summary && (
         <section className="info-card">
-          <div className="form-group">
-            <label>姓名</label>
-            <div className="phone-row">
-              <input value={name} onChange={(e) => setName(e.target.value)} />
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                disabled={saving || name.trim() === summary.name}
-                onClick={saveName}
-              >
-                {saving ? "儲存中…" : "儲存"}
-              </button>
-            </div>
-          </div>
-          <p>手機：{summary.phone}</p>
-          {!editingProfile ? (
-            <>
-              <p>
-                <strong>年齡：</strong>
-                {summary.ageLabel || "未填寫"}
-              </p>
-              <p>
-                <strong>職業：</strong>
-                {summary.occupationLabel || "未填寫"}
-              </p>
-              <p>
-                <strong>居住地：</strong>
-                {summary.residenceLabel || "未填寫"}
-              </p>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm member-profile-edit-btn"
-                onClick={() => setEditingProfile(true)}
-              >
-                編輯年齡／職業／居住地
-              </button>
-            </>
+          {!editing ? (
+            <dl className="member-info-dl">
+              <div>
+                <dt>姓名</dt>
+                <dd>{summary.name}</dd>
+              </div>
+              <div>
+                <dt>手機</dt>
+                <dd>{summary.phone}</dd>
+              </div>
+              <div>
+                <dt>年齡</dt>
+                <dd>{summary.ageLabel || "—"}</dd>
+              </div>
+              <div>
+                <dt>職業</dt>
+                <dd>{summary.occupationLabel || "—"}</dd>
+              </div>
+              <div>
+                <dt>居住地</dt>
+                <dd>{summary.residenceLabel || "—"}</dd>
+              </div>
+            </dl>
           ) : (
             <div className="member-profile-edit">
+              {devCode && (
+                <div className="dev-otp-hint">【開發模式】驗證碼：{devCode}</div>
+              )}
+              <div className="form-group">
+                <label>
+                  姓名 <span className="field-required">（必填）</span>
+                </label>
+                <input value={name} onChange={(e) => setName(e.target.value)} required />
+              </div>
               <MemberProfileFieldsForm
                 value={profileFields}
                 onChange={setProfileFields}
                 idPrefix="member"
+                required
               />
-              <div className="member-profile-edit-actions">
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  disabled={saving}
-                  onClick={() => {
-                    setEditingProfile(false);
-                    setProfileFields(summaryToProfileFields(summary));
-                  }}
-                >
-                  取消
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-purple btn-sm"
-                  disabled={saving}
-                  onClick={saveProfile}
-                >
-                  {saving ? "儲存中…" : "儲存資料"}
-                </button>
+              <div className="form-group">
+                <label>
+                  手機 <span className="field-required">（必填）</span>
+                </label>
+                <div className="phone-row">
+                  <input
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setOtpSent(false);
+                      setOtpCode("");
+                    }}
+                    required
+                    inputMode="tel"
+                  />
+                  {phoneChanged && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      disabled={sendingOtp || cooldown > 0}
+                      onClick={sendOtp}
+                    >
+                      {cooldown > 0 ? `${cooldown}s` : sendingOtp ? "發送中…" : "驗證手機"}
+                    </button>
+                  )}
+                </div>
+                {phoneChanged && (
+                  <p className="slot-meta">變更手機需重新簡訊驗證</p>
+                )}
               </div>
+              {phoneChanged && (
+                <div className="form-group">
+                  <label>
+                    簡訊驗證碼 <span className="field-required">（必填）</span>
+                  </label>
+                  <input
+                    value={otpCode}
+                    onChange={(e) =>
+                      setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    inputMode="numeric"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+              )}
+              <button
+                type="button"
+                className="btn btn-purple btn-lg"
+                disabled={saving}
+                onClick={saveDetails}
+              >
+                {saving ? "儲存中…" : "儲存會員資料"}
+              </button>
             </div>
           )}
+
+          <hr className="member-info-divider" />
           <p>
             <strong>已購買堂數：</strong>
             {summary.totalSessions} 堂

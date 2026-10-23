@@ -6,6 +6,7 @@ interface Props {
   children: ReactNode;
   showMemberLink?: boolean;
   leftAlign?: boolean;
+  headerAction?: ReactNode;
 }
 
 export function PageShell({
@@ -13,6 +14,7 @@ export function PageShell({
   children,
   showMemberLink = true,
   leftAlign = true,
+  headerAction,
 }: Props) {
   return (
     <div className="purchase-page app-page">
@@ -20,12 +22,15 @@ export function PageShell({
         <h1 className={`purchase-page-title ${leftAlign ? "title-left" : ""}`}>
           {title}
         </h1>
-        {showMemberLink && (
-          <Link to="/member" className="member-chip">
-            <span className="member-chip-icon">👤</span>
-            會員專區
-          </Link>
-        )}
+        <div className="purchase-header-actions">
+          {headerAction}
+          {showMemberLink && (
+            <Link to="/member" className="member-chip">
+              <span className="member-chip-icon">👤</span>
+              會員專區
+            </Link>
+          )}
+        </div>
       </header>
       {children}
     </div>

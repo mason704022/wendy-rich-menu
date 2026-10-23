@@ -151,6 +151,50 @@ export function registerMember(input: {
   return { member: getMember(input.lineUserId)!, isNew: true };
 }
 
+export function updateMemberDetails(input: {
+  lineUserId: string;
+  name: string;
+  phone: string;
+  profile: MemberProfileInput;
+}): Member {
+  validateProfileInput(input.profile);
+  const member = getMember(input.lineUserId);
+  if (!member) throw new Error("NOT_REGISTERED");
+
+  const name = input.name.trim();
+  if (!name) throw new Error("NAME_REQUIRED");
+
+  const phone = input.phone.trim();
+  if (phone.length < 8) throw new Error("INVALID_PHONE");
+
+  if (normalizePhone(member.phone) !== normalizePhone(phone)) {
+    const duplicate = findMemberByPhone(phone, input.lineUserId);
+    if (duplicate) throw new Error("PHONE_ALREADY_REGISTERED");
+  }
+
+  const db = getDb();
+  db.prepare(
+    `UPDATE members SET name = ?, phone = ?,
+       age_range = ?, occupation = ?, occupation_other = ?,
+       residence_kind = ?, residence_district = ?, residence_other = ?
+     WHERE line_user_id = ?`
+  ).run(
+    name,
+    phone,
+    input.profile.ageRange,
+    input.profile.occupation,
+    input.profile.occupationOther?.trim() ?? "",
+    input.profile.residenceKind,
+    input.profile.residenceKind === "hsinchu"
+      ? (input.profile.residenceDistrict ?? "")
+      : "",
+    input.profile.residenceKind === "other" ? (input.profile.residenceOther?.trim() ?? "") : "",
+    input.lineUserId
+  );
+
+  return getMember(input.lineUserId)!;
+}
+
 export function updateMemberProfile(
   lineUserId: string,
   profile: MemberProfileInput

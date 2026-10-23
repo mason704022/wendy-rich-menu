@@ -6,6 +6,7 @@ import {
   getMember,
   memberProfileSummary,
   registerMember,
+  updateMemberDetails,
   updateMemberName,
   updateMemberProfile,
 } from "../services/memberService.js";
@@ -134,6 +135,70 @@ membersRouter.patch("/:lineUserId/name", (req, res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     res.status(400).json({ error: message });
+  }
+});
+
+membersRouter.patch("/:lineUserId/details", (req, res) => {
+  const schema = z.object({
+    name: z.string().min(1),
+    phone: z.string().min(8),
+    otpCode: z.string().length(6).optional(),
+    profile: profileSchema,
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  const member = getMember(req.params.lineUserId);
+  if (!member) {
+    return res.status(404).json({ error: "NOT_REGISTERED" });
+  }
+
+  const profile = parsed.data.profile;
+  if (profile.occupation === "other" && !profile.occupationOther?.trim()) {
+    return res.status(400).json({ error: "OCCUPATION_OTHER_REQUIRED" });
+  }
+  if (profile.residenceKind === "hsinchu" && !profile.residenceDistrict) {
+    return res.status(400).json({ error: "RESIDENCE_DISTRICT_REQUIRED" });
+  }
+  if (profile.residenceKind === "other" && !profile.residenceOther?.trim()) {
+    return res.status(400).json({ error: "RESIDENCE_OTHER_REQUIRED" });
+  }
+
+  const phoneChanged =
+    member.phone.replace(/\D/g, "") !== parsed.data.phone.replace(/\D/g, "");
+  if (phoneChanged) {
+    if (!parsed.data.otpCode || !verifyOtp(parsed.data.phone, parsed.data.otpCode)) {
+      return res.status(400).json({
+        error: "INVALID_OTP",
+        message: "變更手機請完成簡訊驗證",
+      });
+    }
+  }
+
+  try {
+    const updated = updateMemberDetails({
+      lineUserId: req.params.lineUserId,
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      profile: {
+        ageRange: profile.ageRange,
+        occupation: profile.occupation,
+        occupationOther: profile.occupationOther,
+        residenceKind: profile.residenceKind,
+        residenceDistrict: profile.residenceDistrict,
+        residenceOther: profile.residenceOther,
+      },
+    });
+    syncMemberToSheetSafe(updated);
+    res.json({ member: updated, profile: memberProfileSummary(updated) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN";
+    if (message === "PHONE_ALREADY_REGISTERED") {
+      return res.status(409).json({ error: message, message: "此手機號碼已被其他會員使用" });
+    }
+    return res.status(400).json({ error: message });
   }
 });
 

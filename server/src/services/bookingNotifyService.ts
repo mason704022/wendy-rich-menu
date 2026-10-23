@@ -8,9 +8,6 @@ import {
 import { formatCoffeeDisplayName } from "./coffeeMenuService.js";
 import { getMember } from "./memberService.js";
 
-/** 正取人數達此門檻時，通知該時段所有已預約會員開課 */
-export const MIN_CLASS_OPENING = 5;
-
 function formatSlotLine(booking: Booking): string {
   const label = slotLabelForBooking(booking);
   return `${booking.slot_date}（${label}）${booking.start_time}-${booking.end_time}`;
@@ -27,49 +24,21 @@ export async function notifyBookingSuccess(booking: Booking): Promise<void> {
     formatSlotLine(booking),
     `狀態：${statusLabel}`,
   ];
-  if (coffeeName) lines.push(`咖啡：${coffeeName}`);
+  if (coffeeName) lines.push(`飲品：${coffeeName}`);
   if (booking.status === "waitlist") {
-    lines.push("若有正取名額釋出，將依序遞补為正取。");
+    lines.push("若有正取名額釋出，將依序遞補為正取。");
   }
+  lines.push(
+    "",
+    "開課確認：開課前 24 小時截止預約與取消後，若正取滿 6 人即確定開課，屆時將另行通知。"
+  );
 
   await notifyUser(booking.line_user_id, lines.join("\n"));
-}
-
-export async function notifyClassOpeningIfNeeded(
-  slotDate: string,
-  startTime: string
-): Promise<void> {
-  const confirmedCount = getConfirmedCountForSlot(slotDate, startTime);
-  if (confirmedCount !== MIN_CLASS_OPENING) return;
-
-  const bookings = listActiveBookingsForSlot(slotDate, startTime);
-  if (bookings.length === 0) return;
-
-  const sample = bookings[0];
-  const slotLine = formatSlotLine(sample);
-
-  for (const booking of bookings) {
-    await notifyUser(
-      booking.line_user_id,
-      [
-        "【開課通知】",
-        slotLine,
-        `正取人數已達 ${MIN_CLASS_OPENING} 人，本時段確定開課！`,
-        "期待與您見面。",
-      ].join("\n")
-    );
-  }
 }
 
 export function notifyBookingSuccessSafe(booking: Booking): void {
   notifyBookingSuccess(booking).catch((err) => {
     console.error("[Booking notify success failed]", booking.id, err);
-  });
-}
-
-export function notifyClassOpeningIfNeededSafe(slotDate: string, startTime: string): void {
-  notifyClassOpeningIfNeeded(slotDate, startTime).catch((err) => {
-    console.error("[Booking notify class opening failed]", slotDate, startTime, err);
   });
 }
 
@@ -100,7 +69,7 @@ export async function notifyAdminNewBooking(booking: Booking): Promise<void> {
     "【新預約】",
     formatSlotLine(booking),
     `會員：${member?.name ?? "?"} · ${member?.phone ?? ""}`,
-    `狀態：${statusLabel}${coffeeName ? ` · 咖啡：${coffeeName}` : ""}`,
+    `狀態：${statusLabel}${coffeeName ? ` · 飲品：${coffeeName}` : ""}`,
     "",
     `本堂正取 ${confirmed} 人，名單：`,
     ...formatRosterLines(booking.slot_date, booking.start_time),

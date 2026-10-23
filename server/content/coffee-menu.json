@@ -2,22 +2,23 @@
   "title": "選擇飲品",
   "items": [
     { "id": "milk-cap-jinxuan", "name": "奶蓋金萱", "description": "" },
-    { "id": "fresh-milk-tea", "name": "鮮奶茶", "description": "", "hotCold": true },
+    { "id": "fresh-milk-tea-hot", "name": "鮮奶茶（熱）", "description": "" },
+    { "id": "fresh-milk-tea-ice", "name": "鮮奶茶（冰）", "description": "" },
     { "id": "honey-lemon-chia", "name": "蜂蜜檸檬奇亞籽", "description": "" },
-    { "id": "black-coffee", "name": "黑咖啡", "description": "", "hotCold": true },
-    { "id": "latte", "name": "拿鐵", "description": "", "hotCold": true },
-    { "id": "mocha", "name": "摩卡咖啡", "description": "", "hotCold": true },
+    { "id": "black-coffee-hot", "name": "黑咖啡（熱）", "description": "" },
+    { "id": "black-coffee-ice", "name": "黑咖啡（冰）", "description": "" },
+    { "id": "latte-hot", "name": "拿鐵（熱）", "description": "" },
+    { "id": "latte-ice", "name": "拿鐵（冰）", "description": "" },
+    { "id": "mocha-hot", "name": "摩卡咖啡（熱）", "description": "" },
+    { "id": "mocha-ice", "name": "摩卡咖啡（冰）", "description": "" },
     { "id": "dirty-coffee", "name": "髒髒咖啡", "description": "" },
     { "id": "guobao-tea", "name": "國寶茶", "description": "" },
-    { "id": "rose-latte", "name": "玫瑰拿鐵", "description": "", "hotCold": true },
+    { "id": "rose-latte-hot", "name": "玫瑰拿鐵（熱）", "description": "" },
+    { "id": "rose-latte-ice", "name": "玫瑰拿鐵（冰）", "description": "" },
     { "id": "lemon-coffee", "name": "檸檬咖啡", "description": "" },
     { "id": "coconut-black", "name": "椰子黑咖啡", "description": "" },
     { "id": "guava-coffee", "name": "紅心芭樂咖啡", "description": "" },
-    {
-      "id": "honey-cinnamon-cap",
-      "name": "蜂蜜肉桂奶蓋咖啡",
-      "description": "",
-      "hotCold": true
-    }
+    { "id": "honey-cinnamon-cap-hot", "name": "蜂蜜肉桂奶蓋咖啡（熱）", "description": "" },
+    { "id": "honey-cinnamon-cap-ice", "name": "蜂蜜肉桂奶蓋咖啡（冰）", "description": "" }
   ]
 }

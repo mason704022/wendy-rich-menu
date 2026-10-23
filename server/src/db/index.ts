@@ -93,6 +93,15 @@ export function initDatabase(dbPath = getDbPath()) {
 
     CREATE INDEX IF NOT EXISTS idx_coupon_assignments_user
       ON coupon_assignments(line_user_id, status);
+
+    CREATE TABLE IF NOT EXISTS slot_opening_decisions (
+      slot_date TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('opened', 'failed')),
+      confirmed_count INTEGER NOT NULL,
+      notified_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (slot_date, start_time)
+    );
   `);
 
   migrateSchema(db);

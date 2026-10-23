@@ -29,6 +29,7 @@ export function getConfig() {
         : ""),
     igUrl: process.env.IG_URL ?? "https://www.instagram.com/",
     adminLineUserId: process.env.ADMIN_LINE_USER_ID ?? "",
+    drinkOrderLineUserId: process.env.DRINK_ORDER_LINE_USER_ID ?? "",
     googleSheetsSpreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? "",
     googleServiceAccountJson: process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "",
     googleSheetsBookingsTab: process.env.GOOGLE_SHEETS_BOOKINGS_TAB ?? "預約",

@@ -11,11 +11,13 @@ import { coursesRouter } from "./routes/courses.js";
 import { membersRouter } from "./routes/members.js";
 import { purchasesRouter } from "./routes/purchases.js";
 import { registerLineWebhook } from "./webhook/line.js";
+import { startClassOpeningScheduler } from "./services/classOpeningService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { port } = getConfig();
 
 initDatabase();
+startClassOpeningScheduler();
 
 const app = express();
 

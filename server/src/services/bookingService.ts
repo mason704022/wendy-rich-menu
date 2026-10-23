@@ -334,9 +334,6 @@ function promoteWaitlist(slotDate: string, startTime: string) {
   const promoted = getBooking(next.id);
   if (promoted) {
     syncBookingToSheetSafe(promoted);
-    void import("./bookingNotifyService.js").then((m) =>
-      m.notifyClassOpeningIfNeededSafe(slotDate, startTime)
-    );
   }
 }
 

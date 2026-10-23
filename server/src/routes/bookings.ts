@@ -12,7 +12,6 @@ import {
 import {
   notifyAdminNewBookingSafe,
   notifyBookingSuccessSafe,
-  notifyClassOpeningIfNeededSafe,
 } from "../services/bookingNotifyService.js";
 
 export const bookingsRouter = Router();
@@ -57,9 +56,6 @@ bookingsRouter.post("/", (req, res) => {
     const booking = createBooking(parsed.data);
     notifyBookingSuccessSafe(booking);
     notifyAdminNewBookingSafe(booking);
-    if (booking.status === "confirmed") {
-      notifyClassOpeningIfNeededSafe(booking.slot_date, booking.start_time);
-    }
     res.status(201).json({ booking });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";

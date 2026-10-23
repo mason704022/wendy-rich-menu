@@ -114,25 +114,20 @@ export function BookingPage() {
     setError("");
   }
 
-  async function confirmBook(
-    coffeeItemId: string,
-    coffeeTemperature?: "hot" | "ice"
-  ) {
+  async function confirmBook(coffeeItemId: string) {
     if (!pendingSlot) return;
     setBookingLoading(true);
     setError("");
     setSuccess("");
     try {
-      const body: Record<string, string> = {
-        lineUserId: profile.userId,
-        slotDate: pendingSlot.slotDate,
-        startTime: pendingSlot.startTime,
-        coffeeItemId,
-      };
-      if (coffeeTemperature) body.coffeeTemperature = coffeeTemperature;
       const res = await api<{ booking: Booking }>("/bookings/", {
         method: "POST",
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          lineUserId: profile.userId,
+          slotDate: pendingSlot.slotDate,
+          startTime: pendingSlot.startTime,
+          coffeeItemId,
+        }),
       });
       const statusText =
         res.booking.status === "waitlist" ? "（備取）" : "（正取）";

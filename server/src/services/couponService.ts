@@ -159,7 +159,7 @@ export function buildCouponAssignedMessage(
     `【折扣券通知】\n` +
     `您收到一張折扣券：${template.name}\n` +
     `優惠：${discountLabel}${expiryLine}\n\n` +
-    `請至購買課程頁選用折扣券：\n${purchasePageUrl}`
+    `請至選擇我的課程頁選用折扣券：\n${purchasePageUrl}`
   );
 }
 

@@ -168,7 +168,7 @@ export function BookingPage() {
 
   if (!registered) {
     return (
-      <PageShell title="我要預約" leftAlign showMemberLink={false}>
+      <PageShell title="預約上課" leftAlign showMemberLink={false}>
         <p className="page-hint">請先完成會員註冊</p>
         <RegisterForm onRegistered={() => setRegistered(true)} />
       </PageShell>
@@ -177,7 +177,7 @@ export function BookingPage() {
 
   if (loadError) {
     return (
-      <PageShell title="我要預約" leftAlign>
+      <PageShell title="預約上課" leftAlign>
         <LoadError message={loadError} onRetry={loadInitialData} />
       </PageShell>
     );
@@ -185,14 +185,14 @@ export function BookingPage() {
 
   if (!coffeeMenu) {
     return (
-      <PageShell title="我要預約" leftAlign>
+      <PageShell title="預約上課" leftAlign>
         <LoadError onRetry={loadInitialData} />
       </PageShell>
     );
   }
 
   return (
-    <PageShell title="我要預約" leftAlign>
+    <PageShell title="預約上課" leftAlign>
       {error && <div className="error-box">{error}</div>}
       {success && <div className="success-box">{success}</div>}
 

@@ -1151,6 +1151,84 @@ body {
   margin-top: 12px;
 }
 
+.about-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.about-tab {
+  flex: 0 0 auto;
+  min-width: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: #fff;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.about-tab.active {
+  background: var(--purple-light);
+  border-color: var(--purple);
+  color: var(--purple-dark);
+}
+
+.about-tab-panel {
+  padding: 16px 12px;
+  min-height: 200px;
+}
+
+.about-tab-heading {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #5a3d7a;
+  line-height: 1.5;
+}
+
+.about-tab-text {
+  margin: 0 0 14px;
+  color: #444;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+.about-tab-accent {
+  color: #755b7a;
+  font-weight: 700;
+}
+
+.about-tab-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.about-tab-list li {
+  margin-bottom: 10px;
+}
+
+.about-tab-list li:last-child {
+  margin-bottom: 0;
+}
+
+.about-tab-map {
+  margin-top: 16px;
+}
+
+.about-tab-map .location-map-wrap {
+  margin: 0;
+}
+
 .plan-header-inline {
   display: flex;
   align-items: center;

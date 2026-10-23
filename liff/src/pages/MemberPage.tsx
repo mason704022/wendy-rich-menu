@@ -155,7 +155,7 @@ export function MemberPage() {
                   : `${c.discountValue}% 折扣`}
                 {c.expiresAt ? ` · 有效至 ${c.expiresAt.slice(0, 10)}` : " · 無期限"}
               </p>
-              <p className="slot-meta">請至購買課程頁選用</p>
+              <p className="slot-meta">請至選擇我的課程頁選用</p>
             </div>
           ))}
         </section>

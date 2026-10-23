@@ -106,7 +106,7 @@ export function CoursesPage() {
                 className={`about-tab ${activeTab === tab.id ? "active" : ""}`}
                 onClick={() => setActiveTab(tab.id)}
               >
-                {tab.label}
+                {tab.label || tab.heading}
               </button>
             ))}
           </div>

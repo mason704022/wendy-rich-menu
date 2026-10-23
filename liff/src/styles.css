@@ -215,9 +215,11 @@ body {
 
 /* ── Purchase flow (Hotcake-style) ── */
 :root {
-  --purple: #8b6fd4;
-  --purple-dark: #7358c4;
-  --purple-light: #f3effc;
+  --purple: #755b7a;
+  --purple-dark: #634a68;
+  --purple-light: #f3eef3;
+  --purple-border: #d4c8d6;
+  --purple-muted: #ababab;
   --gray-bg: #f5f5f7;
   --border-light: #e8e8ed;
 }
@@ -419,6 +421,12 @@ body {
   background: var(--purple-dark);
 }
 
+.btn-purple:disabled {
+  background: var(--purple-muted);
+  color: var(--white);
+  opacity: 1;
+}
+
 .btn-lg {
   padding: 16px;
   font-size: 1.05rem;
@@ -588,10 +596,10 @@ body {
 .admin-tab {
   flex: 1;
   padding: 12px;
-  border: 1px solid var(--purple-border, #d4c4e8);
+  border: 1px solid var(--purple-muted);
   border-radius: 10px;
   background: #fff;
-  color: var(--purple-dark, #5a3d7a);
+  color: var(--purple-muted);
   font-weight: 600;
   cursor: pointer;
   overflow: visible;
@@ -602,9 +610,9 @@ body {
 }
 
 .admin-tab.active {
-  background: var(--purple, #7b5ea7);
+  background: var(--purple);
   color: #fff;
-  border-color: var(--purple, #7b5ea7);
+  border-color: var(--purple);
 }
 
 .admin-tab-count {
@@ -640,7 +648,7 @@ body {
 }
 
 .admin-tab:not(.active) .admin-badge {
-  background: var(--purple, #7b5ea7);
+  background: var(--purple-muted);
   color: #fff;
 }
 
@@ -660,7 +668,7 @@ body {
 }
 
 .admin-sheets-link a {
-  color: var(--purple, #7b5ea7);
+  color: var(--purple);
   font-weight: 600;
 }
 
@@ -892,7 +900,7 @@ body {
   padding: 12px 8px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #999;
+  color: var(--purple-muted);
   cursor: pointer;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
@@ -900,7 +908,7 @@ body {
 
 .plan-tab.active {
   color: #1a1a1a;
-  border-bottom-color: #1a1a1a;
+  border-bottom-color: var(--purple);
 }
 
 .plan-list {
@@ -968,7 +976,7 @@ body {
 .plan-coupon-hint {
   margin: 8px 0 0;
   font-size: 0.82rem;
-  color: #7b5ea7;
+  color: var(--purple);
   text-align: left;
 }
 
@@ -1153,30 +1161,37 @@ body {
 
 .about-tabs {
   display: flex;
-  gap: 6px;
-  margin: 0 0 12px;
+  gap: 0;
+  margin: 0 0 16px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  border-bottom: 1px solid #e5e5e5;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.about-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .about-tab {
   flex: 0 0 auto;
-  min-width: 36px;
-  padding: 8px 12px;
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  background: #fff;
-  color: #666;
-  font-size: 0.9rem;
-  font-weight: 700;
+  padding: 10px 14px 9px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--purple-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .about-tab.active {
-  background: var(--purple-light);
-  border-color: var(--purple);
-  color: var(--purple-dark);
+  color: #1a1a1a;
+  font-weight: 700;
+  border-bottom-color: var(--purple);
 }
 
 .about-tab-panel {
@@ -1201,7 +1216,7 @@ body {
 }
 
 .about-tab-accent {
-  color: #755b7a;
+  color: var(--purple);
   font-weight: 700;
 }
 
@@ -1253,9 +1268,9 @@ body {
 .coupon-section {
   margin: 16px 0;
   padding: 16px;
-  background: #faf8ff;
+  background: var(--purple-light);
   border-radius: 12px;
-  border: 1px solid #e8e0f5;
+  border: 1px solid var(--purple-border);
 }
 
 .coupon-section h3 {
@@ -1284,7 +1299,7 @@ body {
 }
 
 .price-discount {
-  color: #7b5ea7;
+  color: var(--purple);
 }
 
 .price-final {
@@ -1292,12 +1307,12 @@ body {
 }
 
 .plan-summary-discount {
-  color: #7b5ea7;
+  color: var(--purple);
   margin-left: 4px;
 }
 
 .coupon-order-discount {
-  color: #7b5ea7;
+  color: var(--purple);
 }
 
 .admin-form-grid {
@@ -1352,8 +1367,8 @@ body {
 }
 
 .member-search-item.selected {
-  border-color: #7b5ea7;
-  background: #faf8ff;
+  border-color: var(--purple);
+  background: var(--purple-light);
 }
 
 .member-search-item strong {

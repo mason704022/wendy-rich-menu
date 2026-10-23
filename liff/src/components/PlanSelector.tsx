@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { PageShell } from "./PageShell";
-import { PaymentConfirmSheet } from "./PaymentConfirmSheet";
 import { CouponPicker, type AvailableCoupon, type PricePreview, type PlanCouponPrice } from "./CouponPicker";
+import { TermsSheet, type PurchaseTerms } from "./TermsSheet";
+import { PurchaseCheckout } from "./PurchaseCheckout";
 
 export interface Plan {
   id: string;
@@ -10,6 +11,7 @@ export interface Plan {
   durationLabel: string;
   sessionsCount: number;
   price: number;
+  priceLabel?: string;
 }
 
 export interface PlanCategory {
@@ -28,6 +30,7 @@ export interface PaymentInfo {
 interface Props {
   categories: PlanCategory[];
   payment: PaymentInfo;
+  purchaseTerms: PurchaseTerms;
   selectedPlanId: string | null;
   onSelectPlan: (planId: string) => void;
   onSubmit: (data: { payerName: string; transferLast5: string }) => void;
@@ -42,9 +45,22 @@ interface Props {
   planPrices?: Record<string, PlanCouponPrice>;
 }
 
+function formatPlanPrice(plan: Plan, planDiscount?: PlanCouponPrice) {
+  if (planDiscount) {
+    return (
+      <>
+        <span className="price-original">{plan.priceLabel ?? `NT$${plan.price.toLocaleString()}`}</span>
+        NT${planDiscount.final.toLocaleString()}
+      </>
+    );
+  }
+  return <>{plan.priceLabel ?? `NT$${plan.price.toLocaleString()}`}</>;
+}
+
 export function PlanSelector({
   categories,
   payment,
+  purchaseTerms,
   selectedPlanId,
   onSelectPlan,
   onSubmit,
@@ -66,7 +82,23 @@ export function PlanSelector({
   const hasDiscount = (pricePreview?.discount ?? 0) > 0;
 
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? "");
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  const showCategoryTabs = categories.length > 1;
+
+  if (showCheckout && selectedPlan) {
+    return (
+      <PurchaseCheckout
+        payment={payment}
+        amount={displayPrice}
+        defaultName={defaultPayerName}
+        loading={loading}
+        onBack={() => setShowCheckout(false)}
+        onSubmit={onSubmit}
+      />
+    );
+  }
 
   return (
     <PageShell title="選擇我的課程" leftAlign>
@@ -77,61 +109,53 @@ export function PlanSelector({
         <span className="plan-hint">請選擇方案</span>
       </header>
 
-      <div className="plan-tabs">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            className={`plan-tab ${activeCategory === cat.id ? "active" : ""}`}
-            onClick={() => setActiveCategory(cat.id)}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
+      {showCategoryTabs && (
+        <div className="plan-tabs">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              className={`plan-tab ${activeCategory === cat.id ? "active" : ""}`}
+              onClick={() => setActiveCategory(cat.id)}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="plan-list">
-        {categories
-          .find((c) => c.id === activeCategory)
-          ?.plans.map((plan) => {
-            const selected = plan.id === selectedPlanId;
-            const planDiscount = planPrices[plan.id];
-            return (
-              <button
-                key={plan.id}
-                type="button"
-                className={`plan-card ${selected ? "selected" : ""}`}
-                onClick={() => onSelectPlan(plan.id)}
-              >
-                {selected && <span className="plan-check">✓</span>}
-                <h3>{plan.name}</h3>
-                <p className="plan-desc">{plan.description}</p>
-                <div className="plan-meta">
-                  <span>⏱ {plan.durationLabel}</span>
-                  <span className="plan-price">
-                    {planDiscount ? (
-                      <>
-                        <span className="price-original">
-                          NT${plan.price.toLocaleString()}
-                        </span>
-                        NT${planDiscount.final.toLocaleString()}
-                      </>
-                    ) : (
-                      <>NT${plan.price.toLocaleString()}</>
-                    )}
-                  </span>
-                </div>
-                {planDiscount && (
-                  <p className="plan-coupon-hint">
-                    {planDiscount.templateName} 折 NT${planDiscount.discount.toLocaleString()}
-                    {planDiscount.expiresAt
-                      ? ` · 至 ${planDiscount.expiresAt.slice(0, 10)}`
-                      : ""}
-                  </p>
-                )}
-              </button>
-            );
-          })}
+        {(showCategoryTabs
+          ? categories.find((c) => c.id === activeCategory)?.plans
+          : categories.flatMap((c) => c.plans)
+        )?.map((plan) => {
+          const selected = plan.id === selectedPlanId;
+          const planDiscount = planPrices[plan.id];
+          return (
+            <button
+              key={plan.id}
+              type="button"
+              className={`plan-card ${selected ? "selected" : ""}`}
+              onClick={() => onSelectPlan(plan.id)}
+            >
+              {selected && <span className="plan-check">✓</span>}
+              <h3>{plan.name}</h3>
+              <p className="plan-desc">{plan.description}</p>
+              <div className="plan-meta">
+                {plan.durationLabel ? <span>⏱ {plan.durationLabel}</span> : null}
+                <span className="plan-price">{formatPlanPrice(plan, planDiscount)}</span>
+              </div>
+              {planDiscount && (
+                <p className="plan-coupon-hint">
+                  {planDiscount.templateName} 折 NT${planDiscount.discount.toLocaleString()}
+                  {planDiscount.expiresAt
+                    ? ` · 至 ${planDiscount.expiresAt.slice(0, 10)}`
+                    : ""}
+                </p>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {selectedPlan && onSelectCoupon && (
@@ -142,42 +166,6 @@ export function PlanSelector({
           pricePreview={pricePreview}
           loading={couponLoading}
         />
-      )}
-
-      {selectedPlan && (
-        <section className="payment-card">
-          <h3>匯款資訊</h3>
-          <dl className="payment-dl">
-            <div>
-              <dt>銀行</dt>
-              <dd>{payment.bankName}</dd>
-            </div>
-            <div>
-              <dt>帳號</dt>
-              <dd>{payment.accountNumber}</dd>
-            </div>
-            <div>
-              <dt>戶名</dt>
-              <dd>{payment.accountName}</dd>
-            </div>
-            <div>
-              <dt>金額</dt>
-              <dd>
-                {hasDiscount ? (
-                  <>
-                    <span className="price-original">NT$ {selectedPlan.price.toLocaleString()}</span>
-                    {" → "}
-                    <strong>NT$ {displayPrice.toLocaleString()}</strong>
-                  </>
-                ) : (
-                  <>NT$ {displayPrice.toLocaleString()}</>
-                )}
-                （{selectedPlan.sessionsCount} 堂）
-              </dd>
-            </div>
-          </dl>
-          <p className="payment-note">{payment.note}</p>
-        </section>
       )}
 
       <div className="plan-footer">
@@ -203,29 +191,23 @@ export function PlanSelector({
             <span>請選擇課程方案</span>
           )}
         </div>
-        <div className="plan-actions">
-          <button type="button" className="plan-nav-back" onClick={onBack}>
-            ←
-          </button>
-          <button
-            type="button"
-            className="btn btn-purple btn-lg plan-submit"
-            disabled={!selectedPlan || loading}
-            onClick={() => setShowPaymentForm(true)}
-          >
-            我已完成匯款 →
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn-purple btn-lg plan-submit-full"
+          disabled={!selectedPlan || loading}
+          onClick={() => setShowTerms(true)}
+        >
+          購買課程
+        </button>
       </div>
 
-      <PaymentConfirmSheet
-        open={showPaymentForm}
-        defaultName={defaultPayerName}
-        onClose={() => setShowPaymentForm(false)}
-        loading={loading}
-        onConfirm={(data) => {
-          setShowPaymentForm(false);
-          onSubmit(data);
+      <TermsSheet
+        terms={purchaseTerms}
+        open={showTerms}
+        onClose={() => setShowTerms(false)}
+        onNext={() => {
+          setShowTerms(false);
+          setShowCheckout(true);
         }}
       />
     </PageShell>

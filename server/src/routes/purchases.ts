@@ -45,6 +45,10 @@ purchasesRouter.get("/plans", (_req, res) => {
   res.json(loadJson("plans.json"));
 });
 
+purchasesRouter.get("/purchase-terms", (_req, res) => {
+  res.json(loadJson("purchase-terms.json"));
+});
+
 purchasesRouter.get("/payment-info", (_req, res) => {
   const payment = loadJson<{
     bankName: string;

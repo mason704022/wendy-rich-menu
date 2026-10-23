@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, apiOptional } from "../lib/api";
 import { closeLiff, getProfile } from "../lib/liff";
 import { LoadError, apiErrorMessage } from "../components/LoadError";
@@ -8,22 +9,16 @@ import {
   type PaymentInfo,
 } from "../components/PlanSelector";
 import type { AvailableCoupon, PricePreview, PlanCouponPrice } from "../components/CouponPicker";
-import { PurchaseLanding } from "../components/PurchaseLanding";
+import type { PurchaseTerms } from "../components/TermsSheet";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
 
-interface Terms {
-  title: string;
-  intro: string[];
-  sections: string[];
-  disclaimer?: string;
-}
-
-type View = "landing" | "register" | "plans";
+type View = "register" | "plans";
 
 export function PurchasePage() {
+  const navigate = useNavigate();
   const { registered, setRegistered, profile } = useMemberRegistered();
-  const [view, setView] = useState<View>("landing");
-  const [terms, setTerms] = useState<Terms | null>(null);
+  const [view, setView] = useState<View>("plans");
+  const [purchaseTerms, setPurchaseTerms] = useState<PurchaseTerms | null>(null);
   const [categories, setCategories] = useState<PlanCategory[]>([]);
   const [payment, setPayment] = useState<PaymentInfo | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -44,17 +39,16 @@ export function PurchasePage() {
     setInitialLoading(true);
     setLoadError("");
     Promise.all([
-      api<Terms>("/members/content/terms"),
+      api<PurchaseTerms>("/purchases/purchase-terms"),
       api<{ categories: PlanCategory[] }>("/purchases/plans"),
       api<PaymentInfo>("/purchases/payment-info"),
     ])
-      .then(([t, p, pay]) => {
-        setTerms(t);
+      .then(([terms, p, pay]) => {
+        setPurchaseTerms(terms);
         setCategories(p.categories);
         setPayment(pay);
-        if (p.categories[0]?.plans[0]) {
-          setSelectedPlanId(p.categories[0].plans[0].id);
-        }
+        const firstPlan = p.categories.flatMap((c) => c.plans)[0];
+        if (firstPlan) setSelectedPlanId(firstPlan.id);
       })
       .catch((err) => setLoadError(apiErrorMessage(err)))
       .finally(() => setInitialLoading(false));
@@ -63,6 +57,11 @@ export function PurchasePage() {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  useEffect(() => {
+    if (registered === false) setView("register");
+    else if (registered === true) setView("plans");
+  }, [registered]);
 
   useEffect(() => {
     if (!registered) return;
@@ -137,16 +136,8 @@ export function PurchasePage() {
     return <LoadError message={loadError} onRetry={loadInitialData} />;
   }
 
-  if (!terms || !payment || categories.length === 0) {
+  if (!purchaseTerms || !payment || categories.length === 0) {
     return <LoadError onRetry={loadInitialData} />;
-  }
-
-  function goNextFromLanding() {
-    if (!registered) {
-      setView("register");
-      return;
-    }
-    setView("plans");
   }
 
   function afterRegistered() {
@@ -208,37 +199,37 @@ export function PurchasePage() {
 
   if (view === "register") {
     return (
-      <RegisterForm onRegistered={afterRegistered} onCancel={() => setView("landing")} />
+      <RegisterForm
+        onRegistered={afterRegistered}
+        onCancel={() => navigate("/courses")}
+      />
     );
   }
 
-  if (view === "plans") {
-    return (
-      <>
-        {error && <div className="error-box plan-error">{error}</div>}
-        <PlanSelector
-          categories={categories}
-          payment={payment}
-          selectedPlanId={selectedPlanId}
-          onSelectPlan={(id) => {
-            setSelectedPlanId(id || null);
-            setSelectedCouponId(null);
-            setPricePreview(null);
-          }}
-          onSubmit={submitPayment}
-          loading={loading}
-          onBack={() => setView("landing")}
-          defaultPayerName={defaultPayerName}
-          coupons={coupons}
-          selectedCouponId={selectedCouponId}
-          onSelectCoupon={setSelectedCouponId}
-          pricePreview={pricePreview}
-          couponLoading={couponLoading}
-          planPrices={planPrices}
-        />
-      </>
-    );
-  }
-
-  return <PurchaseLanding terms={terms} onNext={goNextFromLanding} />;
+  return (
+    <>
+      {error && <div className="error-box plan-error">{error}</div>}
+      <PlanSelector
+        categories={categories}
+        payment={payment}
+        purchaseTerms={purchaseTerms}
+        selectedPlanId={selectedPlanId}
+        onSelectPlan={(id) => {
+          setSelectedPlanId(id || null);
+          setSelectedCouponId(null);
+          setPricePreview(null);
+        }}
+        onSubmit={submitPayment}
+        loading={loading}
+        onBack={() => navigate("/courses")}
+        defaultPayerName={defaultPayerName}
+        coupons={coupons}
+        selectedCouponId={selectedCouponId}
+        onSelectCoupon={setSelectedCouponId}
+        pricePreview={pricePreview}
+        couponLoading={couponLoading}
+        planPrices={planPrices}
+      />
+    </>
+  );
 }

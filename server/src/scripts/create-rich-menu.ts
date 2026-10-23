@@ -94,7 +94,7 @@ async function main() {
         bounds: RICH_MENU_BOUNDS.purchase,
         action: {
           type: "uri" as const,
-          label: "購買課程",
+          label: "選擇我的課程",
           uri: liffUrl("/purchase"),
         },
       },
@@ -102,7 +102,7 @@ async function main() {
         bounds: RICH_MENU_BOUNDS.booking,
         action: {
           type: "uri" as const,
-          label: "我要預約",
+          label: "預約上課",
           uri: liffUrl("/booking"),
         },
       },

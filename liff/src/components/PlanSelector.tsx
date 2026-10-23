@@ -69,7 +69,7 @@ export function PlanSelector({
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   return (
-    <PageShell title="購買課程" leftAlign>
+    <PageShell title="選擇我的課程" leftAlign>
       <header className="plan-header-inline">
         <button type="button" className="plan-back" onClick={onBack}>
           取消

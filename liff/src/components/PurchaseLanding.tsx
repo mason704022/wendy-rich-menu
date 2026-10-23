@@ -17,7 +17,7 @@ export function PurchaseLanding({ terms, onNext }: Props) {
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <PageShell title="購買課程" leftAlign>
+    <PageShell title="選擇我的課程" leftAlign>
       <section className="info-card terms-inline">
         <h3>{terms.title}</h3>
         {terms.intro.map((line) => (

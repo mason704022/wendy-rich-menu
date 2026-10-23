@@ -5,6 +5,45 @@ import { LoadError, apiErrorMessage } from "../components/LoadError";
 import { PageShell } from "../components/PageShell";
 import { LocationMap } from "../components/LocationMap";
 
+interface AboutTab {
+  id: string;
+  label: string;
+  heading?: string;
+  lines: string[];
+  showMap?: boolean;
+}
+
+function AboutTabBody({ tab }: { tab: AboutTab }) {
+  const faqLines = tab.lines.every((line) => line.startsWith("- "));
+  const bodyLines = faqLines ? tab.lines : tab.lines;
+
+  return (
+    <>
+      {tab.heading && <h3 className="about-tab-heading">{tab.heading}</h3>}
+      {faqLines ? (
+        <ul className="about-tab-list">
+          {bodyLines.map((line) => (
+            <li key={line}>{line.replace(/^- /, "")}</li>
+          ))}
+        </ul>
+      ) : (
+        bodyLines.map((line) => (
+          <p
+            key={line}
+            className={
+              line.startsWith("如果你看到這裡")
+                ? "about-tab-text about-tab-accent"
+                : "about-tab-text"
+            }
+          >
+            {line}
+          </p>
+        ))
+      )}
+    </>
+  );
+}
+
 interface CourseContent {
   title: string;
   courseName: string;
@@ -19,6 +58,7 @@ interface CourseContent {
   duration: string;
   price: string;
   venue: { name: string; address: string; mapUrl: string };
+  aboutTabs?: AboutTab[];
 }
 
 export function CoursesPage() {
@@ -26,12 +66,17 @@ export function CoursesPage() {
   const [content, setContent] = useState<CourseContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("a");
 
   const loadContent = useCallback(() => {
     setLoading(true);
     setError("");
     api<CourseContent>("/courses/")
-      .then(setContent)
+      .then((data) => {
+        setContent(data);
+        const first = data.aboutTabs?.[0]?.id;
+        if (first) setActiveTab(first);
+      })
       .catch((err) => setError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
@@ -44,57 +89,48 @@ export function CoursesPage() {
   if (error) return <LoadError message={error} onRetry={loadContent} />;
   if (!content) return <LoadError onRetry={loadContent} />;
 
-  return (
-    <PageShell title="課程資訊" leftAlign>
-      <section className="info-card">
-        <h2>{content.courseName}</h2>
-        <p className="info-lead">{content.introduction}</p>
-        <dl className="info-dl">
-          <div>
-            <dt>適合對象</dt>
-            <dd>{content.targetAudience}</dd>
-          </div>
-          <div>
-            <dt>教學方式</dt>
-            <dd>{content.teachingMethod}</dd>
-          </div>
-          <div>
-            <dt>課程特色</dt>
-            <dd>{content.features}</dd>
-          </div>
-          <div>
-            <dt>包含內容</dt>
-            <dd>{content.includes}</dd>
-          </div>
-          <div>
-            <dt>堂數規則</dt>
-            <dd>{content.sessionRule}</dd>
-          </div>
-          <div>
-            <dt>名額</dt>
-            <dd>{content.capacity}</dd>
-          </div>
-          <div>
-            <dt>時長</dt>
-            <dd>{content.duration}</dd>
-          </div>
-          <div>
-            <dt>時段</dt>
-            <dd>{content.schedule}</dd>
-          </div>
-          <div>
-            <dt>費用</dt>
-            <dd>{content.price}</dd>
-          </div>
-        </dl>
-      </section>
+  const tabs = content.aboutTabs ?? [];
+  const current = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
-      <section className="info-card info-card-venue">
-        <LocationMap />
-        <a className="store-link" href={content.venue.mapUrl} target="_blank" rel="noreferrer">
-          在 Google 地圖開啟
-        </a>
-      </section>
+  return (
+    <PageShell title={content.title} leftAlign>
+      {tabs.length > 0 && (
+        <>
+          <div className="about-tabs" role="tablist" aria-label="認識我們分頁">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`about-tab ${activeTab === tab.id ? "active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {current && (
+            <section className="info-card about-tab-panel" role="tabpanel">
+              <AboutTabBody tab={current} />
+              {current.showMap && (
+                <div className="about-tab-map">
+                  <LocationMap />
+                  <a
+                    className="store-link"
+                    href={content.venue.mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    在 Google 地圖開啟
+                  </a>
+                </div>
+              )}
+            </section>
+          )}
+        </>
+      )}
 
       <div className="purchase-footer">
         <button
@@ -102,7 +138,7 @@ export function CoursesPage() {
           className="btn btn-purple btn-lg"
           onClick={() => navigate("/purchase")}
         >
-          購買課程
+          選擇我的課程
         </button>
       </div>
     </PageShell>

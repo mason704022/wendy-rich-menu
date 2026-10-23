@@ -5,20 +5,31 @@
       "label": "課程方案",
       "plans": [
         {
+          "id": "trial-1",
+          "name": "🌱 體驗課｜第一次來，先試試看",
+          "description": "適合第一次接觸成人畫畫課、想先感受課程氛圍的你。\n不用準備畫具，帶著輕鬆的心情來就好，\n一堂課完成一幅作品。",
+          "durationLabel": "",
+          "sessionsCount": 1,
+          "price": 850,
+          "priceLabel": "NT$850／堂"
+        },
+        {
           "id": "pack-5",
-          "name": "5 堂課程",
-          "description": "每堂 2 小時，適合初次體驗",
-          "durationLabel": "5 堂 × 2 小時",
+          "name": "🌿 五堂課｜想固定留一點時間給自己",
+          "description": "適合想慢慢培養畫畫習慣，\n也想舒壓或是上過體驗課後想繼續畫下去的你。",
+          "durationLabel": "",
           "sessionsCount": 5,
-          "price": 3800
+          "price": 3800,
+          "priceLabel": "NT$3,800／5堂"
         },
         {
           "id": "pack-8",
-          "name": "8 堂課程",
-          "description": "每堂 2 小時，超值方案",
-          "durationLabel": "8 堂 × 2 小時",
+          "name": "🌳 八堂課｜想更完整地學習與累積作品",
+          "description": "適合已經喜歡上課氛圍，想持續畫畫、\n累積作品，也希望能有進步的你。",
+          "durationLabel": "",
           "sessionsCount": 8,
-          "price": 5600
+          "price": 5800,
+          "priceLabel": "NT$5,800／8堂"
         }
       ]
     }

@@ -1,13 +1,14 @@
 import { useState } from "react";
 
-interface Terms {
+export interface PurchaseTerms {
   title: string;
   intro: string[];
   sections: string[];
+  agreeLabel?: string;
 }
 
 interface Props {
-  terms: Terms;
+  terms: PurchaseTerms;
   open: boolean;
   onClose: () => void;
   onNext: () => void;
@@ -32,39 +33,45 @@ export function TermsSheet({ terms, open, onClose, onNext }: Props) {
               {line}
             </p>
           ))}
-          <ul className="sheet-list">
+          <ul className="sheet-list sheet-list-terms">
             {terms.sections.map((s) => (
               <li key={s}>{s}</li>
             ))}
           </ul>
         </div>
 
-        <TermsFooter onNext={onNext} />
+        <TermsFooter agreeLabel={terms.agreeLabel} onNext={onNext} />
       </div>
     </div>
   );
 }
 
-function TermsFooter({ onNext }: { onNext: () => void }) {
+function TermsFooter({
+  agreeLabel,
+  onNext,
+}: {
+  agreeLabel?: string;
+  onNext: () => void;
+}) {
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <div className="sheet-footer">
+    <div className="sheet-footer sheet-footer-stack">
       <label className="sheet-agree">
         <input
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
         />
-        <span>我已閱讀並同意內容</span>
+        <span>{agreeLabel ?? "我已閱讀並同意內容"}</span>
       </label>
       <button
         type="button"
-        className="btn btn-purple sheet-next"
+        className="btn btn-purple sheet-next sheet-next-full"
         disabled={!agreed}
         onClick={onNext}
       >
-        下一步
+        下一頁
       </button>
     </div>
   );

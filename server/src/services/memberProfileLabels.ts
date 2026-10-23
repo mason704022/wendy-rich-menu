@@ -11,6 +11,7 @@ const OCCUPATION_LABELS: Record<string, string> = {
   service: "服務業",
   education: "教職",
   medical: "醫療",
+  manufacturing: "製造業",
   other: "其他",
 };
 

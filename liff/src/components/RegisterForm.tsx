@@ -5,6 +5,7 @@ import {
   MemberProfileFieldsForm,
   emptyMemberProfileFields,
 } from "./MemberProfileFieldsForm";
+import { SITE_BRAND_TITLE } from "../lib/siteBrand";
 import {
   validateMemberProfile,
   type AgeRange,
@@ -132,6 +133,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
   return (
     <div className="purchase-page register-page">
+      <p className="site-brand-title">{SITE_BRAND_TITLE}</p>
       <header className="purchase-header">
         {onCancel ? (
           <button type="button" className="plan-back" onClick={onCancel}>

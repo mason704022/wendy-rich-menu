@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { SITE_BRAND_TITLE } from "../lib/siteBrand";
 
 interface Props {
   title: string;
@@ -18,6 +19,7 @@ export function PageShell({
 }: Props) {
   return (
     <div className="purchase-page app-page">
+      <p className="site-brand-title">{SITE_BRAND_TITLE}</p>
       <header className={`purchase-header ${leftAlign ? "header-left" : ""}`}>
         <h1 className={`purchase-page-title ${leftAlign ? "title-left" : ""}`}>
           {title}

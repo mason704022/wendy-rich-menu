@@ -11,6 +11,7 @@ import {
 import type { AvailableCoupon, PricePreview, PlanCouponPrice } from "../components/CouponPicker";
 import type { PurchaseTerms } from "../components/TermsSheet";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
+import { SITE_BRAND_TITLE } from "../lib/siteBrand";
 
 type View = "register" | "plans";
 
@@ -177,7 +178,7 @@ export function PurchasePage() {
     return (
       <div className="purchase-page">
         <div className="success-screen">
-          <h1 className="brand-title">Wendy</h1>
+          <h1 className="brand-title">{SITE_BRAND_TITLE}</h1>
           <div className="success-box">
             已收到您的匯款通知！
             {orderId != null && (

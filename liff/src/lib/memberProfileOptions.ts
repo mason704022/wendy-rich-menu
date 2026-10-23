@@ -11,6 +11,7 @@ export const OCCUPATION_OPTIONS = [
   { value: "service", label: "服務業" },
   { value: "education", label: "教職" },
   { value: "medical", label: "醫療" },
+  { value: "manufacturing", label: "製造業" },
   { value: "other", label: "其他" },
 ] as const;
 

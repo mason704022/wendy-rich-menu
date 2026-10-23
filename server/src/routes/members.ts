@@ -17,7 +17,15 @@ export const membersRouter = Router();
 
 const profileSchema = z.object({
   ageRange: z.enum(["20-30", "30-40", "40-50", "50+"]),
-  occupation: z.enum(["student", "freelance", "service", "education", "medical", "other"]),
+  occupation: z.enum([
+    "student",
+    "freelance",
+    "service",
+    "education",
+    "medical",
+    "manufacturing",
+    "other",
+  ]),
   occupationOther: z.string().optional(),
   residenceKind: z.enum(["hsinchu", "other"]),
   residenceDistrict: z.enum(["north", "east", "xiangshan"]).optional(),

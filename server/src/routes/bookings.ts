@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getBookingWindow } from "../services/bookingWindow.js";
+import { BOOKING_WINDOW_DAYS, getBookingWindow } from "../services/bookingWindow.js";
+import { loadJson } from "../config.js";
 import { getCoffeeMenu } from "../services/coffeeMenuService.js";
 import {
   cancelBooking,
@@ -15,6 +16,14 @@ import {
 } from "../services/bookingNotifyService.js";
 
 export const bookingsRouter = Router();
+
+bookingsRouter.get("/window", (_req, res) => {
+  res.json({ ...getBookingWindow(), days: BOOKING_WINDOW_DAYS });
+});
+
+bookingsRouter.get("/booking-terms", (_req, res) => {
+  res.json(loadJson("booking-terms.json"));
+});
 
 bookingsRouter.get("/coffee-menu", (_req, res) => {
   res.json(getCoffeeMenu());

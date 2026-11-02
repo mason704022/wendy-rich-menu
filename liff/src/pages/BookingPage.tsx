@@ -5,6 +5,8 @@ import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
 import { CoffeePickerSheet, type CoffeeItem } from "../components/CoffeePickerSheet";
 import { PageShell } from "../components/PageShell";
 import { SessionThumb } from "../components/SessionThumb";
+import { BookingTermsBlock } from "../components/BookingTermsBlock";
+import type { PurchaseTerms } from "../components/TermsSheet";
 
 interface Slot {
   slotDate: string;
@@ -34,24 +36,6 @@ interface Booking {
   can_cancel: boolean;
 }
 
-function todayIsoLocal() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function fourWeeksLater(from: string) {
-  const [y, m, d] = from.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  date.setDate(date.getDate() + 28);
-  const yy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
-}
-
 export function BookingPage() {
   const { registered, setRegistered, profile } = useMemberRegistered();
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -67,16 +51,17 @@ export function BookingPage() {
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [bookingTerms, setBookingTerms] = useState<PurchaseTerms | null>(null);
 
   const loadAvailability = useCallback(() => {
-    const from = todayIsoLocal();
-    const to = fourWeeksLater(from);
     return Promise.all([
-      api<{ slots: Slot[] }>(
-        `/bookings/availability?from=${from}&to=${to}&lineUserId=${encodeURIComponent(profile.userId)}`
-      ),
+      api<{ from: string; to: string }>("/bookings/window"),
       api<{ bookings: Booking[] }>(`/bookings/user/${profile.userId}`),
-    ]).then(([a, b]) => {
+    ]).then(([window, b]) =>
+      api<{ slots: Slot[] }>(
+        `/bookings/availability?from=${window.from}&to=${window.to}&lineUserId=${encodeURIComponent(profile.userId)}`
+      ).then((a) => ({ a, b }))
+    ).then(({ a, b }) => {
       setSlots(
         a.slots.filter((s) => (s.canBookConfirmed || s.canBookWaitlist) && !s.alreadyBooked)
       );
@@ -89,9 +74,13 @@ export function BookingPage() {
     setLoadError("");
     Promise.all([
       api<{ title: string; items: CoffeeItem[] }>("/bookings/coffee-menu"),
+      api<PurchaseTerms>("/bookings/booking-terms"),
       loadAvailability(),
     ])
-      .then(([menu]) => setCoffeeMenu(menu))
+      .then(([menu, terms]) => {
+        setCoffeeMenu(menu);
+        setBookingTerms(terms);
+      })
       .catch((err) => setLoadError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, [loadAvailability]);
@@ -196,7 +185,7 @@ export function BookingPage() {
       {error && <div className="error-box">{error}</div>}
       {success && <div className="success-box">{success}</div>}
 
-      <p className="page-hint">開課前 24 小時截止預約；開課前 24 小時內無法取消。</p>
+      {bookingTerms && <BookingTermsBlock terms={bookingTerms} />}
 
       {myBookings.length > 0 && (
         <section className="info-card">
@@ -228,7 +217,7 @@ export function BookingPage() {
       )}
 
       <section className="info-card">
-        <h2>可預約時段（後四週）</h2>
+        <h2>可預約時段（兩週內）</h2>
         {slots.length === 0 && <p>近期無可預約時段</p>}
         {slots.map((slot) => (
           <div className="slot-card" key={`${slot.slotDate}-${slot.startTime}`}>

@@ -54,15 +54,15 @@ adminRouter.get("/purchases/pending", (_req, res) => {
 });
 
 adminRouter.get("/bookings/sessions", (req, res) => {
-  const days = Number(req.query.days ?? 28);
-  const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 90) : 28;
+  const days = Number(req.query.days ?? 14);
+  const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 90) : 14;
   res.json({ sessions: listBookingSessionsForAdmin(safeDays) });
 });
 
 /** @deprecated 相容舊版 LIFF */
 adminRouter.get("/bookings/upcoming", (req, res) => {
-  const days = Number(req.query.days ?? 28);
-  const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 90) : 28;
+  const days = Number(req.query.days ?? 14);
+  const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 90) : 14;
   res.json({ sessions: listBookingSessionsForAdmin(safeDays) });
 });
 

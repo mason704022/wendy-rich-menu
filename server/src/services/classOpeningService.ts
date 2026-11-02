@@ -13,7 +13,7 @@ import { getSlotStartMs, isWithinBookingCutoff } from "./bookingTimeUtils.js";
 import { syncBookingToSheetSafe } from "./googleSheetsService.js";
 
 /** 開課門檻：截止預約後正取人數 */
-export const MIN_CLASS_OPENING = 6;
+export const MIN_CLASS_OPENING = 5;
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 

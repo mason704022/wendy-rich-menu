@@ -12,12 +12,14 @@ import { membersRouter } from "./routes/members.js";
 import { purchasesRouter } from "./routes/purchases.js";
 import { registerLineWebhook } from "./webhook/line.js";
 import { startClassOpeningScheduler } from "./services/classOpeningService.js";
+import { startSessionThemeReminderScheduler } from "./services/sessionThemeReminderService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { port } = getConfig();
 
 initDatabase();
 startClassOpeningScheduler();
+startSessionThemeReminderScheduler();
 
 const app = express();
 

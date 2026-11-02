@@ -144,7 +144,7 @@ export function AdminPage() {
 
       api<{ sessions: BookingSession[] }>(
 
-        `/admin/bookings/sessions?days=28&${adminQuery}`
+        `/admin/bookings/sessions?days=14&${adminQuery}`
 
       ),
 
@@ -524,7 +524,7 @@ export function AdminPage() {
 
             if (daySessions.length === 0) {
 
-              return <p>近四週沒有{dayLabel}的預約</p>;
+              return <p>近兩週沒有{dayLabel}的預約</p>;
 
             }
 

@@ -102,6 +102,11 @@ export function initDatabase(dbPath = getDbPath()) {
       notified_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (slot_date, start_time)
     );
+
+    CREATE TABLE IF NOT EXISTS scheduler_kv (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 
   migrateSchema(db);

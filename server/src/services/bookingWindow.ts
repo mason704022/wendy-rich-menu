@@ -8,7 +8,7 @@ import {
 } from "../utils/localDate.js";
 import { SLOT_TEMPLATES } from "./slotTemplates.js";
 
-export const BOOKING_WINDOW_DAYS = 28;
+export const BOOKING_WINDOW_DAYS = 14;
 
 export function getBookingWindow(): { from: string; to: string } {
   const from = todayIsoLocal();

@@ -30,7 +30,7 @@ export async function notifyBookingSuccess(booking: Booking): Promise<void> {
   }
   lines.push(
     "",
-    "開課確認：開課前 24 小時截止預約與取消後，若正取滿 6 人即確定開課，屆時將另行通知。"
+    "開課確認：開課前 24 小時截止預約與取消後，若正取滿 5 人即確定開課，屆時將另行通知。"
   );
 
   await notifyUser(booking.line_user_id, lines.join("\n"));

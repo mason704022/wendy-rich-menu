@@ -5,6 +5,7 @@ export interface PurchaseTerms {
   intro: string[];
   sections: string[];
   agreeLabel?: string;
+  disclaimer?: string;
 }
 
 function renderTermsSection(text: string) {

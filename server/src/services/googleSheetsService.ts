@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { google, sheets_v4 } from "googleapis";
 import { getConfig, resolveServerPath } from "../config.js";
 import type { Booking } from "./bookingService.js";
@@ -54,23 +55,70 @@ const MEMBER_HEADERS = [
 
 let sheetsClient: sheets_v4.Sheets | null = null;
 
+export type GoogleSheetsCredentialsSource = "inline" | "file" | "missing";
+
+export interface GoogleSheetsDiagnostics {
+  spreadsheetIdSet: boolean;
+  credentialsConfigured: boolean;
+  credentialsSource: GoogleSheetsCredentialsSource;
+  credentialsPath: string | null;
+  syncReady: boolean;
+  bookingsTab: string;
+}
+
 function isConfigured(): boolean {
   const { googleSheetsSpreadsheetId, googleServiceAccountJson } = getConfig();
-  return Boolean(googleSheetsSpreadsheetId && googleServiceAccountJson);
+  return Boolean(googleSheetsSpreadsheetId && googleServiceAccountJson.trim());
+}
+
+function loadServiceAccountCredentials(): {
+  credentials: Record<string, unknown> | null;
+  source: GoogleSheetsCredentialsSource;
+  path: string | null;
+} {
+  const raw = getConfig().googleServiceAccountJson.trim();
+  if (!raw) {
+    return { credentials: null, source: "missing", path: null };
+  }
+
+  if (raw.startsWith("{")) {
+    try {
+      return {
+        credentials: JSON.parse(raw) as Record<string, unknown>,
+        source: "inline",
+        path: null,
+      };
+    } catch {
+      console.warn("[Google Sheets] GOOGLE_SERVICE_ACCOUNT_JSON JSON parse failed");
+      return { credentials: null, source: "missing", path: null };
+    }
+  }
+
+  const keyPath = path.isAbsolute(raw) ? raw : resolveServerPath(raw);
+  if (!fs.existsSync(keyPath)) {
+    console.warn("[Google Sheets] Credentials file not found:", keyPath);
+    return { credentials: null, source: "missing", path: keyPath };
+  }
+
+  try {
+    return {
+      credentials: JSON.parse(fs.readFileSync(keyPath, "utf-8")) as Record<string, unknown>,
+      source: "file",
+      path: keyPath,
+    };
+  } catch {
+    console.warn("[Google Sheets] Credentials file is not valid JSON:", keyPath);
+    return { credentials: null, source: "missing", path: keyPath };
+  }
 }
 
 function getSheetsClient(): sheets_v4.Sheets | null {
   if (!isConfigured()) return null;
   if (sheetsClient) return sheetsClient;
 
-  const { googleServiceAccountJson } = getConfig();
-  const keyPath = resolveServerPath(googleServiceAccountJson);
-  if (!fs.existsSync(keyPath)) {
-    console.warn("[Google Sheets] Credentials file not found:", keyPath);
-    return null;
-  }
+  const { credentials } = loadServiceAccountCredentials();
+  if (!credentials) return null;
 
-  const credentials = JSON.parse(fs.readFileSync(keyPath, "utf-8"));
   const auth = new google.auth.GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -78,6 +126,28 @@ function getSheetsClient(): sheets_v4.Sheets | null {
 
   sheetsClient = google.sheets({ version: "v4", auth });
   return sheetsClient;
+}
+
+export function getGoogleSheetsDiagnostics(): GoogleSheetsDiagnostics {
+  const {
+    googleSheetsSpreadsheetId,
+    googleServiceAccountJson,
+    googleSheetsBookingsTab,
+  } = getConfig();
+  const { source, path: credPath } = loadServiceAccountCredentials();
+  const spreadsheetIdSet = Boolean(googleSheetsSpreadsheetId.trim());
+  const credentialsConfigured = Boolean(googleServiceAccountJson.trim());
+  const syncReady =
+    spreadsheetIdSet && credentialsConfigured && getSheetsClient() !== null;
+
+  return {
+    spreadsheetIdSet,
+    credentialsConfigured,
+    credentialsSource: source,
+    credentialsPath: credPath,
+    syncReady,
+    bookingsTab: googleSheetsBookingsTab,
+  };
 }
 
 function weekdayLabel(weekday: number): string {
@@ -240,14 +310,28 @@ async function upsertRow(
 
 export async function syncBookingToSheet(booking: Booking): Promise<void> {
   if (!isConfigured()) return;
+  if (!getSheetsClient()) {
+    console.warn("[Google Sheets] Skip booking sync — credentials not ready");
+    return;
+  }
   const { googleSheetsBookingsTab } = getConfig();
-  await upsertRow(googleSheetsBookingsTab, BOOKING_HEADERS, bookingToRow(booking), 13);
+  await upsertRow(
+    googleSheetsBookingsTab,
+    BOOKING_HEADERS,
+    bookingToRow(booking),
+    BOOKING_HEADERS.length
+  );
 }
 
 export async function syncPurchaseToSheet(purchase: Purchase): Promise<void> {
   if (!isConfigured()) return;
   const { googleSheetsPurchasesTab } = getConfig();
-  await upsertRow(googleSheetsPurchasesTab, PURCHASE_HEADERS, purchaseToRow(purchase), 13);
+  await upsertRow(
+    googleSheetsPurchasesTab,
+    PURCHASE_HEADERS,
+    purchaseToRow(purchase),
+    PURCHASE_HEADERS.length
+  );
 }
 
 export async function syncMemberToSheet(member: Member): Promise<void> {
@@ -275,5 +359,5 @@ export function syncMemberToSheetSafe(member: Member): void {
 }
 
 export function isGoogleSheetsConfigured(): boolean {
-  return isConfigured() && getSheetsClient() !== null;
+  return getGoogleSheetsDiagnostics().syncReady;
 }

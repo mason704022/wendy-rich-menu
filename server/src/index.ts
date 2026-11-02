@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getConfig, SERVER_ROOT } from "./config.js";
 import { initDatabase } from "./db/index.js";
-import { isGoogleSheetsConfigured } from "./services/googleSheetsService.js";
+import { getGoogleSheetsDiagnostics } from "./services/googleSheetsService.js";
 import { adminRouter } from "./routes/admin.js";
 import { bookingsRouter } from "./routes/bookings.js";
 import { coursesRouter } from "./routes/courses.js";
@@ -60,11 +60,11 @@ app.get(/^(?!\/api)(?!\/content).*/, (_req, res) => {
 });
 
 app.listen(port, "::", () => {
-  const sheetsOk = isGoogleSheetsConfigured();
+  const sheets = getGoogleSheetsDiagnostics();
   console.log(`Wendy LINE API listening on [::]:${port}`);
-  console.log(
-    sheetsOk
-      ? "[Google Sheets] Sync enabled"
-      : "[Google Sheets] Sync disabled — check .env and credentials"
-  );
+  if (sheets.syncReady) {
+    console.log(`[Google Sheets] Sync enabled (tab: ${sheets.bookingsTab})`);
+  } else {
+    console.warn("[Google Sheets] Sync NOT active:", JSON.stringify(sheets));
+  }
 });

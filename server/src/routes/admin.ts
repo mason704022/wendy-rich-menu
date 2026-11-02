@@ -15,7 +15,10 @@ import {
   revokeAssignment,
 } from "../services/couponService.js";
 import { searchMembers } from "../services/memberService.js";
-import { isGoogleSheetsConfigured } from "../services/googleSheetsService.js";
+import {
+  getGoogleSheetsDiagnostics,
+  isGoogleSheetsConfigured,
+} from "../services/googleSheetsService.js";
 import {
   confirmPurchase,
   listPendingPurchasesWithMember,
@@ -42,9 +45,12 @@ adminRouter.use(requireAdmin);
 
 adminRouter.get("/check", (_req, res) => {
   const { googleSheetsUrl } = getConfig();
+  const sheets = getGoogleSheetsDiagnostics();
   res.json({
     ok: true,
     sheetsConfigured: isGoogleSheetsConfigured(),
+    sheetsSyncReady: sheets.syncReady,
+    sheetsDiagnostics: sheets,
     sheetsUrl: googleSheetsUrl || null,
   });
 });

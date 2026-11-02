@@ -5,40 +5,108 @@ import { LoadError, apiErrorMessage } from "../components/LoadError";
 import { PageShell } from "../components/PageShell";
 import { LocationMap } from "../components/LocationMap";
 
-interface AboutTab {
-  id: string;
-  label: string;
-  heading?: string;
+interface AboutSection {
+  heading: string;
   lines: string[];
   showMap?: boolean;
 }
 
-function AboutTabBody({ tab }: { tab: AboutTab }) {
-  const faqLines = tab.lines.every((line) => line.startsWith("- "));
-  const bodyLines = faqLines ? tab.lines : tab.lines;
+interface AboutTab {
+  id: string;
+  label: string;
+  heading?: string;
+  lines?: string[];
+  sections?: AboutSection[];
+  showMap?: boolean;
+}
+
+function renderAboutLine(text: string) {
+  const parts = text.split(/(\[\[accent\]\][\s\S]*?\[\[\/accent\]\])/g);
+  return parts.map((part, index) => {
+    const match = part.match(/^\[\[accent\]\]([\s\S]*?)\[\[\/accent\]\]$/);
+    if (match) {
+      return (
+        <span key={index} className="about-tab-accent">
+          {match[1]}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
+function AboutLines({ lines }: { lines: string[] }) {
+  const faqLines = lines.every((line) => line.startsWith("- "));
+
+  if (faqLines) {
+    return (
+      <ul className="about-tab-list">
+        {lines.map((line) => (
+          <li key={line}>{renderAboutLine(line.replace(/^- /, ""))}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <>
+      {lines.map((line) => (
+        <p
+          key={line}
+          className={
+            line.startsWith("如果你看到這裡")
+              ? "about-tab-text about-tab-accent"
+              : "about-tab-text"
+          }
+        >
+          {renderAboutLine(line)}
+        </p>
+      ))}
+    </>
+  );
+}
+
+function AboutTabBody({
+  tab,
+  mapUrl,
+}: {
+  tab: AboutTab;
+  mapUrl: string;
+}) {
+  if (tab.sections && tab.sections.length > 0) {
+    return (
+      <div className="about-stacked-sections">
+        {tab.sections.map((section) => (
+          <article key={section.heading} className="about-stacked-card">
+            <h4 className="about-stacked-heading">{section.heading}</h4>
+            <AboutLines lines={section.lines} />
+            {section.showMap && (
+              <div className="about-tab-map">
+                <LocationMap />
+                <a className="store-link" href={mapUrl} target="_blank" rel="noreferrer">
+                  在 Google 地圖開啟
+                </a>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  const lines = tab.lines ?? [];
 
   return (
     <>
       {tab.heading && <h3 className="about-tab-heading">{tab.heading}</h3>}
-      {faqLines ? (
-        <ul className="about-tab-list">
-          {bodyLines.map((line) => (
-            <li key={line}>{line.replace(/^- /, "")}</li>
-          ))}
-        </ul>
-      ) : (
-        bodyLines.map((line) => (
-          <p
-            key={line}
-            className={
-              line.startsWith("如果你看到這裡")
-                ? "about-tab-text about-tab-accent"
-                : "about-tab-text"
-            }
-          >
-            {line}
-          </p>
-        ))
+      <AboutLines lines={lines} />
+      {tab.showMap && (
+        <div className="about-tab-map">
+          <LocationMap />
+          <a className="store-link" href={mapUrl} target="_blank" rel="noreferrer">
+            在 Google 地圖開啟
+          </a>
+        </div>
       )}
     </>
   );
@@ -66,7 +134,7 @@ export function CoursesPage() {
   const [content, setContent] = useState<CourseContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("a");
+  const [activeTab, setActiveTab] = useState("course");
 
   const loadContent = useCallback(() => {
     setLoading(true);
@@ -91,6 +159,7 @@ export function CoursesPage() {
 
   const tabs = content.aboutTabs ?? [];
   const current = tabs.find((t) => t.id === activeTab) ?? tabs[0];
+  const stackedLayout = Boolean(current?.sections?.length);
 
   return (
     <PageShell title={content.title} leftAlign>
@@ -106,27 +175,17 @@ export function CoursesPage() {
                 className={`about-tab ${activeTab === tab.id ? "active" : ""}`}
                 onClick={() => setActiveTab(tab.id)}
               >
-                {tab.label || tab.heading}
+                {tab.label}
               </button>
             ))}
           </div>
 
           {current && (
-            <section className="info-card about-tab-panel" role="tabpanel">
-              <AboutTabBody tab={current} />
-              {current.showMap && (
-                <div className="about-tab-map">
-                  <LocationMap />
-                  <a
-                    className="store-link"
-                    href={content.venue.mapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    在 Google 地圖開啟
-                  </a>
-                </div>
-              )}
+            <section
+              className={`info-card about-tab-panel ${stackedLayout ? "about-tab-panel-stacked" : ""}`}
+              role="tabpanel"
+            >
+              <AboutTabBody tab={current} mapUrl={content.venue.mapUrl} />
             </section>
           )}
         </>

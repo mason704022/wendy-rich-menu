@@ -1399,6 +1399,37 @@ body {
   min-height: 200px;
 }
 
+.about-tab-panel-stacked {
+  background: #f3eef3;
+  border: none;
+  padding: 12px;
+}
+
+.about-stacked-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-stacked-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--purple-border);
+}
+
+.about-stacked-heading {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #5a3d7a;
+  line-height: 1.45;
+}
+
+.about-stacked-card .about-tab-text:last-child {
+  margin-bottom: 0;
+}
+
 .about-tab-heading {
   margin: 0 0 14px;
   font-size: 1.05rem;

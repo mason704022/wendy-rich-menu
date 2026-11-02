@@ -1,5 +1,6 @@
 import { middleware, webhook, JSONParseError, SignatureValidationFailed } from "@line/bot-sdk";
 import express, { type Request, Response, RequestHandler } from "express";
+import { sendFollowWelcomeMessage } from "../services/followWelcomeService.js";
 
 const channelSecret = process.env.LINE_CHANNEL_SECRET ?? "";
 
@@ -51,6 +52,7 @@ async function handleEvent(event: webhook.Event) {
 
   if (event.type === "follow") {
     console.log("New follower:", userId);
+    await sendFollowWelcomeMessage(event.replyToken, userId);
   }
 
   if (event.type === "message") {

@@ -4,13 +4,17 @@ import { notifyAdmin, notifyUser } from "../lineClient.js";
 import {
   getConfirmedCountForSlot,
   listActiveBookingsForSlot,
-  slotLabelForBooking,
   type Booking,
 } from "./bookingService.js";
-import { formatCoffeeDisplayName } from "./coffeeMenuService.js";
-import { getMember, refundSession } from "./memberService.js";
+import { refundSession } from "./memberService.js";
 import { getSlotStartMs, isWithinBookingCutoff } from "./bookingTimeUtils.js";
 import { syncBookingToSheetSafe } from "./googleSheetsService.js";
+import {
+  buildStaffClassCancelledMessage,
+  buildStaffClassOpenedMessage,
+  buildStudentClassCancelledMessage,
+  buildStudentClassOpenedMessage,
+} from "./classOpeningMessages.js";
 
 /** 開課門檻：截止預約後正取人數 */
 export const MIN_CLASS_OPENING = 5;
@@ -18,11 +22,6 @@ export const MIN_CLASS_OPENING = 5;
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
 type SlotKey = { slotDate: string; startTime: string };
-
-function formatSlotLine(booking: Booking): string {
-  const label = slotLabelForBooking(booking);
-  return `${booking.slot_date}（${label}）${booking.start_time}-${booking.end_time}`;
-}
 
 function listSlotsPendingDecision(): SlotKey[] {
   const db = getDb();
@@ -77,87 +76,61 @@ function systemCancelAllBookings(slotDate: string, startTime: string) {
   }
 }
 
-function buildDrinkLines(slotDate: string, startTime: string): string[] {
-  const bookings = listActiveBookingsForSlot(slotDate, startTime).filter(
-    (b) => b.status === "confirmed"
-  );
-  if (bookings.length === 0) return ["（無正取飲品）"];
-
-  return bookings.map((b, i) => {
-    const member = getMember(b.line_user_id);
-    const drink = b.coffee_item_id
-      ? formatCoffeeDisplayName(b.coffee_item_id, b.coffee_temperature)
-      : "（未選飲品）";
-    return `${i + 1}. ${member?.name ?? "?"} · ${drink}`;
-  });
-}
-
 async function notifyClassOpened(slotDate: string, startTime: string, confirmedCount: number) {
   const bookings = listActiveBookingsForSlot(slotDate, startTime);
   if (bookings.length === 0) return;
 
-  const slotLine = formatSlotLine(bookings[0]);
-  const studentMessage = [
-    "【開課成功】",
-    slotLine,
-    `已過預約截止時間，正取 ${confirmedCount} 人，本堂確定開課！`,
-    "期待與您見面。",
-  ].join("\n");
+  const sample = bookings[0];
+  const endTime = sample.end_time;
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
 
-  for (const booking of bookings) {
-    await notifyUser(booking.line_user_id, studentMessage);
+  for (const booking of confirmed) {
+    await notifyUser(booking.line_user_id, buildStudentClassOpenedMessage(booking));
   }
 
-  const drinkLines = buildDrinkLines(slotDate, startTime);
-  const staffMessage = [
-    "【開課成功｜飲品整理】",
-    slotLine,
-    `正取 ${confirmedCount} 人`,
-    "",
-    ...drinkLines,
-  ].join("\n");
+  const staffMessage = buildStaffClassOpenedMessage(
+    slotDate,
+    startTime,
+    endTime,
+    confirmedCount,
+    confirmed
+  );
 
   const { drinkOrderLineUserId, adminLineUserId } = getConfig();
   const staffId = drinkOrderLineUserId || adminLineUserId;
   if (staffId) {
     await notifyUser(staffId, staffMessage);
   } else {
-    console.log("[Drink order notification — no DRINK_ORDER_LINE_USER_ID]", staffMessage);
+    console.log("[Class opening staff notify — no DRINK_ORDER_LINE_USER_ID]", staffMessage);
   }
 
-  await notifyAdmin(
-    [
-      "【系統】開課成功",
-      slotLine,
-      `正取 ${confirmedCount} 人，已通知學員並送出飲品整理。`,
-    ].join("\n")
-  );
+  await notifyAdmin(staffMessage);
 }
 
 async function notifyClassFailed(slotDate: string, startTime: string, confirmedCount: number) {
   const bookings = listActiveBookingsForSlot(slotDate, startTime);
   if (bookings.length === 0) return;
 
-  const slotLine = formatSlotLine(bookings[0]);
-  const studentMessage = [
-    "【開課取消】",
-    slotLine,
-    `已過預約截止時間，正取僅 ${confirmedCount} 人，未達 ${MIN_CLASS_OPENING} 人開班門檻。`,
-    "本堂無法開課，已為您取消預約；若已扣堂數將退回帳戶。",
-    "若有疑問請私訊工作室。",
-  ].join("\n");
+  const sample = bookings[0];
+  const studentMessage = buildStudentClassCancelledMessage();
+  const staffMessage = buildStaffClassCancelledMessage(
+    slotDate,
+    startTime,
+    sample.end_time,
+    confirmedCount
+  );
 
   for (const booking of bookings) {
     await notifyUser(booking.line_user_id, studentMessage);
   }
 
-  await notifyAdmin(
-    [
-      "【系統】開課失敗",
-      slotLine,
-      `正取 ${confirmedCount} 人（需 ${MIN_CLASS_OPENING} 人），已取消該堂預約並退回堂數。`,
-    ].join("\n")
-  );
+  const { drinkOrderLineUserId, adminLineUserId } = getConfig();
+  const staffId = drinkOrderLineUserId || adminLineUserId;
+  if (staffId && staffId !== adminLineUserId) {
+    await notifyUser(staffId, staffMessage);
+  }
+
+  await notifyAdmin(staffMessage);
 }
 
 export async function processSlotOpeningDecisions(): Promise<number> {

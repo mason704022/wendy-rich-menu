@@ -10,10 +10,7 @@ import {
   listBookingsByUser,
   SLOT_TEMPLATES,
 } from "../services/bookingService.js";
-import {
-  notifyAdminNewBookingSafe,
-  notifyBookingSuccessSafe,
-} from "../services/bookingNotifyService.js";
+import { notifyBookingSuccessSafe } from "../services/bookingNotifyService.js";
 
 export const bookingsRouter = Router();
 
@@ -64,7 +61,6 @@ bookingsRouter.post("/", (req, res) => {
   try {
     const booking = createBooking(parsed.data);
     notifyBookingSuccessSafe(booking);
-    notifyAdminNewBookingSafe(booking);
     res.status(201).json({ booking });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";

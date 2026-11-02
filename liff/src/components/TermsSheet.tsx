@@ -6,6 +6,7 @@ export interface PurchaseTerms {
   sections: string[];
   agreeLabel?: string;
   disclaimer?: string;
+  emphasisStyle?: boolean;
 }
 
 function renderTermsSection(text: string) {
@@ -45,18 +46,30 @@ export function TermsSheet({ terms, open, onClose, onNext }: Props) {
 
         <div className="sheet-body">
           {terms.intro.map((line) => (
-            <p key={line} className="sheet-intro">
+            <p
+              key={line}
+              className={`sheet-intro ${terms.emphasisStyle ? "terms-body-emphasis" : ""}`}
+            >
               {line}
             </p>
           ))}
-          <ul className="sheet-list sheet-list-terms">
+          <ul
+            className={`sheet-list sheet-list-terms ${terms.emphasisStyle ? "terms-body-emphasis" : ""}`}
+          >
             {terms.sections.map((s) => (
               <li key={s}>{renderTermsSection(s)}</li>
             ))}
           </ul>
+          {terms.disclaimer && (
+            <p className="purchase-disclaimer">{terms.disclaimer}</p>
+          )}
         </div>
 
-        <TermsFooter agreeLabel={terms.agreeLabel} onNext={onNext} />
+        <TermsFooter
+          agreeLabel={terms.agreeLabel}
+          emphasisStyle={terms.emphasisStyle}
+          onNext={onNext}
+        />
       </div>
     </div>
   );
@@ -64,9 +77,11 @@ export function TermsSheet({ terms, open, onClose, onNext }: Props) {
 
 function TermsFooter({
   agreeLabel,
+  emphasisStyle,
   onNext,
 }: {
   agreeLabel?: string;
+  emphasisStyle?: boolean;
   onNext: () => void;
 }) {
   const [agreed, setAgreed] = useState(false);
@@ -79,7 +94,9 @@ function TermsFooter({
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
         />
-        <span>{agreeLabel ?? "我已閱讀並同意內容"}</span>
+        <span className={emphasisStyle ? "terms-body-emphasis" : undefined}>
+          {agreeLabel ?? "我已閱讀並同意內容"}
+        </span>
       </label>
       <button
         type="button"

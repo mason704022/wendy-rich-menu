@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { LoadError, apiErrorMessage } from "../components/LoadError";
@@ -20,18 +20,28 @@ interface AboutTab {
   showMap?: boolean;
 }
 
-function renderAboutLine(text: string) {
-  const parts = text.split(/(\[\[accent\]\][\s\S]*?\[\[\/accent\]\])/g);
+function renderAboutLine(text: string, keyPrefix = ""): ReactNode[] {
+  const tokenRe = /(\[\[(?:accent|bold)\]\][\s\S]*?\[\[\/(?:accent|bold)\]\])/g;
+  const parts = text.split(tokenRe);
   return parts.map((part, index) => {
-    const match = part.match(/^\[\[accent\]\]([\s\S]*?)\[\[\/accent\]\]$/);
-    if (match) {
+    const accent = part.match(/^\[\[accent\]\]([\s\S]*?)\[\[\/accent\]\]$/);
+    if (accent) {
       return (
-        <span key={index} className="about-tab-accent">
-          {match[1]}
+        <span key={`${keyPrefix}a${index}`} className="about-tab-accent">
+          {accent[1]}
         </span>
       );
     }
-    return part;
+    const bold = part.match(/^\[\[bold\]\]([\s\S]*?)\[\[\/bold\]\]$/);
+    if (bold) {
+      return (
+        <strong key={`${keyPrefix}b${index}`} className="about-tab-bold">
+          {bold[1]}
+        </strong>
+      );
+    }
+    if (!part) return null;
+    return <span key={`${keyPrefix}t${index}`}>{part}</span>;
   });
 }
 

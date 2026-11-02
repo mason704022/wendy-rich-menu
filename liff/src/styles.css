@@ -1093,6 +1093,11 @@ body {
   font-weight: 600;
 }
 
+.terms-body-emphasis {
+  color: #c0392b;
+  font-weight: 500;
+}
+
 .checkout-step {
   background: var(--white);
   border: 1px solid var(--border-light);
@@ -1449,6 +1454,11 @@ body {
 .about-tab-accent {
   color: var(--purple);
   font-weight: 700;
+}
+
+.about-tab-bold {
+  font-weight: 700;
+  color: #1a1a1a;
 }
 
 .about-tab-list {

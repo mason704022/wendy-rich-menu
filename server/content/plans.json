@@ -19,8 +19,8 @@
           "description": "適合想慢慢培養畫畫習慣，\n也想舒壓或是上過體驗課後想繼續畫下去的你。",
           "durationLabel": "",
           "sessionsCount": 5,
-          "price": 3800,
-          "priceLabel": "NT$3,800／5堂"
+          "price": 3900,
+          "priceLabel": "NT$3,900／5堂"
         },
         {
           "id": "pack-8",
@@ -28,8 +28,8 @@
           "description": "適合已經喜歡上課氛圍，想持續畫畫、\n累積作品，也希望能有進步的你。",
           "durationLabel": "",
           "sessionsCount": 8,
-          "price": 5800,
-          "priceLabel": "NT$5,800／8堂"
+          "price": 5900,
+          "priceLabel": "NT$5,900／8堂"
         }
       ]
     }

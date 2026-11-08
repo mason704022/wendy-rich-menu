@@ -1267,6 +1267,23 @@ body {
   font-weight: 600;
 }
 
+.field-check {
+  display: inline-block;
+  margin-left: 0.1em;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.field-check--complete {
+  color: #2d9b4a;
+}
+
+.field-check--incomplete {
+  color: #b8b8b8;
+}
+
 .plan-error {
   position: fixed;
   top: 12px;

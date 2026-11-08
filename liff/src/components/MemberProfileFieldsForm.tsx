@@ -2,8 +2,12 @@ import {
   AGE_RANGE_OPTIONS,
   HSINCHU_DISTRICT_OPTIONS,
   OCCUPATION_OPTIONS,
+  isAgeRangeComplete,
+  isOccupationComplete,
+  isResidenceComplete,
   type MemberProfileFields,
 } from "../lib/memberProfileOptions";
+import { RequiredFieldMark } from "./RequiredFieldMark";
 
 interface Props {
   value: MemberProfileFields;
@@ -19,6 +23,7 @@ function RadioGroup<T extends string>({
   value,
   onChange,
   required,
+  complete,
 }: {
   legend: string;
   name: string;
@@ -26,12 +31,13 @@ function RadioGroup<T extends string>({
   value: T | "";
   onChange: (v: T) => void;
   required?: boolean;
+  complete?: boolean;
 }) {
   return (
     <fieldset className="radio-fieldset">
       <legend className="radio-legend">
         {legend}
-        {required ? <span className="field-required">（必填）</span> : null}
+        {required ? <RequiredFieldMark complete={Boolean(complete)} /> : null}
       </legend>
       <div className="radio-group">
         {options.map((opt) => (
@@ -58,7 +64,6 @@ export function MemberProfileFieldsForm({
   required = false,
 }: Props) {
   const set = (patch: Partial<MemberProfileFields>) => onChange({ ...value, ...patch });
-  const reqMark = required ? <span className="field-required">（必填）</span> : null;
 
   return (
     <>
@@ -69,6 +74,7 @@ export function MemberProfileFieldsForm({
         value={value.ageRange}
         onChange={(ageRange) => set({ ageRange })}
         required={required}
+        complete={isAgeRangeComplete(value)}
       />
 
       <RadioGroup
@@ -83,11 +89,12 @@ export function MemberProfileFieldsForm({
           })
         }
         required={required}
+        complete={isOccupationComplete(value)}
       />
       {value.occupation === "other" && (
         <div className="form-group">
           <label htmlFor={`${idPrefix}-occupation-other`}>
-            其他職業 {reqMark}
+            其他職業 {required ? <RequiredFieldMark complete={Boolean(value.occupationOther.trim())} /> : null}
           </label>
           <input
             id={`${idPrefix}-occupation-other`}
@@ -102,7 +109,7 @@ export function MemberProfileFieldsForm({
       <fieldset className="radio-fieldset">
         <legend className="radio-legend">
           居住地
-          {reqMark}
+          {required ? <RequiredFieldMark complete={isResidenceComplete(value)} /> : null}
         </legend>
         <div className="radio-group radio-group-stack">
           <label className="radio-option">
@@ -150,7 +157,8 @@ export function MemberProfileFieldsForm({
       {value.residenceKind === "other" && (
         <div className="form-group">
           <label htmlFor={`${idPrefix}-residence-other`}>
-            其他居住地 {reqMark}
+            其他居住地{" "}
+            {required ? <RequiredFieldMark complete={Boolean(value.residenceOther.trim())} /> : null}
           </label>
           <input
             id={`${idPrefix}-residence-other`}

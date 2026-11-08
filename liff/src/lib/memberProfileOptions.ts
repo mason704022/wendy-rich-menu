@@ -34,6 +34,23 @@ export interface MemberProfileFields {
   residenceOther: string;
 }
 
+export function isAgeRangeComplete(fields: MemberProfileFields): boolean {
+  return Boolean(fields.ageRange);
+}
+
+export function isOccupationComplete(fields: MemberProfileFields): boolean {
+  if (!fields.occupation) return false;
+  if (fields.occupation === "other") return Boolean(fields.occupationOther.trim());
+  return true;
+}
+
+export function isResidenceComplete(fields: MemberProfileFields): boolean {
+  if (!fields.residenceKind) return false;
+  if (fields.residenceKind === "hsinchu") return Boolean(fields.residenceDistrict);
+  if (fields.residenceKind === "other") return Boolean(fields.residenceOther.trim());
+  return false;
+}
+
 export function validateMemberProfile(fields: MemberProfileFields): string | null {
   if (!fields.ageRange) return "請選擇年齡";
   if (!fields.occupation) return "請選擇職業";

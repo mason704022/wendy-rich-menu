@@ -14,6 +14,7 @@ import {
   type MemberProfileFields,
 } from "../lib/memberProfileOptions";
 import { PageShell } from "../components/PageShell";
+import { RequiredFieldMark } from "../components/RequiredFieldMark";
 import type { AvailableCoupon } from "../components/CouponPicker";
 
 interface Summary {
@@ -263,7 +264,7 @@ export function MemberPage() {
             <div className="member-profile-edit">
               <div className="form-group">
                 <label>
-                  姓名 <span className="field-required">（必填）</span>
+                  姓名 <RequiredFieldMark complete={Boolean(name.trim())} />
                 </label>
                 <input value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
@@ -275,7 +276,7 @@ export function MemberPage() {
               />
               <div className="form-group">
                 <label>
-                  手機 <span className="field-required">（必填）</span>
+                  手機 <RequiredFieldMark complete={Boolean(phone.trim())} />
                 </label>
                 <input
                   value={phone}

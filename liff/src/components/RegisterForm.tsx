@@ -12,6 +12,7 @@ import {
   type HsinchuDistrict,
   type Occupation,
 } from "../lib/memberProfileOptions";
+import { RequiredFieldMark } from "./RequiredFieldMark";
 
 interface Props {
   onRegistered: () => void;
@@ -129,7 +130,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
         <form onSubmit={submit}>
           <div className="form-group">
             <label>
-              LINE 暱稱 <span className="field-required">（必填）</span>
+              LINE 暱稱 <RequiredFieldMark complete={Boolean(displayName.trim())} />
             </label>
             <input
               value={displayName}
@@ -146,7 +147,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
           </div>
           <div className="form-group">
             <label>
-              姓名 <span className="field-required">（必填）</span>
+              姓名 <RequiredFieldMark complete={Boolean(name.trim())} />
             </label>
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
@@ -160,7 +161,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
           <div className="form-group">
             <label>
-              手機 <span className="field-required">（必填）</span>
+              手機 <RequiredFieldMark complete={Boolean(phone.trim())} />
             </label>
             <input
               value={phone}

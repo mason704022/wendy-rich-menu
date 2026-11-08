@@ -18,18 +18,21 @@ interface Props {
   onCancel?: () => void;
 }
 
+const LIFF_ID = import.meta.env.VITE_LIFF_ID ?? "";
+
+function isValidLineUserId(id: string): boolean {
+  return /^U[a-f0-9]{32}$/i.test(id.trim());
+}
+
 export function RegisterForm({ onRegistered, onCancel }: Props) {
   const profile = getProfile();
+  const lineIdFromLiff = Boolean(LIFF_ID) && profile.userId !== "dev-user";
+  const [lineUserId, setLineUserId] = useState(profile.userId);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [profileFields, setProfileFields] = useState(emptyMemberProfileFields());
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [devCode, setDevCode] = useState("");
-  const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
   const [duplicateMember, setDuplicateMember] = useState<{ name: string; phone: string } | null>(
     null
   );
@@ -46,32 +49,8 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
   }, [profile.userId]);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [cooldown]);
-
-  async function sendOtp() {
-    if (!phone.trim()) {
-      setError("請先填寫手機號碼");
-      return;
-    }
-    setSendingOtp(true);
-    setError("");
-    try {
-      const res = await api<{ ok: boolean; devCode?: string }>("/members/send-otp", {
-        method: "POST",
-        body: JSON.stringify({ phone }),
-      });
-      setOtpSent(true);
-      setCooldown(60);
-      if (res.devCode) setDevCode(res.devCode);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "發送失敗");
-    } finally {
-      setSendingOtp(false);
-    }
-  }
+    setLineUserId(profile.userId);
+  }, [profile.userId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,12 +58,21 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
       setError("請填寫姓名");
       return;
     }
-    if (!phone.trim()) {
-      setError("請填寫手機");
+    const lineId = lineUserId.trim();
+    if (!lineId) {
+      setError("請填寫 LINE ID");
       return;
     }
-    if (!otpSent || otpCode.length !== 6) {
-      setError("請先完成手機簡訊驗證");
+    if (!isValidLineUserId(lineId)) {
+      setError("LINE ID 格式不正確（應為 U 開頭的一組英數）");
+      return;
+    }
+    if (lineIdFromLiff && lineId !== profile.userId) {
+      setError("LINE ID 須與目前登入的 LINE 帳號一致");
+      return;
+    }
+    if (!phone.trim()) {
+      setError("請填寫手機");
       return;
     }
     const profileError = validateMemberProfile(profileFields);
@@ -98,11 +86,10 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
       await api("/members/register", {
         method: "POST",
         body: JSON.stringify({
-          lineUserId: profile.userId,
+          lineUserId: lineId,
           displayName: profile.displayName,
           name,
           phone,
-          otpCode,
           profile: {
             ageRange: profileFields.ageRange as AgeRange,
             occupation: profileFields.occupation as Occupation,
@@ -148,13 +135,30 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
 
       <div className="register-card">
         <h2>填寫資料</h2>
-        <p>以下欄位皆為必填，並須完成手機簡訊驗證。</p>
+        <p>以下欄位皆為必填。</p>
         {error && <div className="error-box">{error}</div>}
-        {devCode && (
-          <div className="dev-otp-hint">【開發模式】驗證碼：{devCode}</div>
-        )}
 
         <form onSubmit={submit}>
+          <div className="form-group">
+            <label>
+              LINE ID <span className="field-required">（必填）</span>
+            </label>
+            <input
+              value={lineUserId}
+              onChange={(e) => setLineUserId(e.target.value.trim())}
+              required
+              readOnly={lineIdFromLiff}
+              className={lineIdFromLiff ? "input-readonly" : undefined}
+              placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <p className="slot-meta">
+              {lineIdFromLiff
+                ? "已由 LINE 自動帶入，與您登入的帳號綁定。"
+                : "請貼上您的 LINE User ID（開發測試可手動輸入）。"}
+            </p>
+          </div>
           <div className="form-group">
             <label>
               姓名 <span className="field-required">（必填）</span>
@@ -173,35 +177,12 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
             <label>
               手機 <span className="field-required">（必填）</span>
             </label>
-            <div className="phone-row">
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                inputMode="tel"
-                placeholder="09xxxxxxxx"
-              />
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                disabled={sendingOtp || cooldown > 0}
-                onClick={sendOtp}
-              >
-                {cooldown > 0 ? `${cooldown}s` : sendingOtp ? "發送中…" : "發送驗證碼"}
-              </button>
-            </div>
-          </div>
-          <div className="form-group">
-            <label>
-              簡訊驗證碼 <span className="field-required">（必填）</span>
-            </label>
             <input
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
-              inputMode="numeric"
-              placeholder="6 位數驗證碼"
-              maxLength={6}
+              inputMode="tel"
+              placeholder="09xxxxxxxx"
             />
           </div>
           <button
@@ -209,10 +190,9 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
             type="submit"
             disabled={
               loading ||
+              !lineUserId.trim() ||
               !name.trim() ||
               !phone.trim() ||
-              !otpSent ||
-              otpCode.length !== 6 ||
               validateMemberProfile(profileFields) !== null
             }
           >

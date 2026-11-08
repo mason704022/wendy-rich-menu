@@ -67,14 +67,6 @@ export function MemberPage() {
   const [message, setMessage] = useState("");
   const [myCoupons, setMyCoupons] = useState<AvailableCoupon[]>([]);
   const [editing, setEditing] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [devCode, setDevCode] = useState("");
-  const [cooldown, setCooldown] = useState(0);
-  const [sendingOtp, setSendingOtp] = useState(false);
-
-  const phoneChanged =
-    phone.replace(/\D/g, "") !== originalPhone.replace(/\D/g, "");
 
   const loadMemberData = useCallback(() => {
     setLoading(true);
@@ -111,21 +103,12 @@ export function MemberPage() {
     loadMemberData();
   }, [registered, loadMemberData]);
 
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [cooldown]);
-
   function resetEditForm() {
     if (!summary) return;
     setName(summary.name);
     setPhone(summary.phone);
     setOriginalPhone(summary.phone);
     setProfileFields(summaryToProfileFields(summary));
-    setOtpCode("");
-    setOtpSent(false);
-    setDevCode("");
   }
 
   function startEdit() {
@@ -140,28 +123,6 @@ export function MemberPage() {
     setMessage("");
   }
 
-  async function sendOtp() {
-    if (!phone.trim()) {
-      setMessage("請先填寫手機號碼");
-      return;
-    }
-    setSendingOtp(true);
-    setMessage("");
-    try {
-      const res = await api<{ ok: boolean; devCode?: string }>("/members/send-otp", {
-        method: "POST",
-        body: JSON.stringify({ phone }),
-      });
-      setOtpSent(true);
-      setCooldown(60);
-      if (res.devCode) setDevCode(res.devCode);
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "發送失敗");
-    } finally {
-      setSendingOtp(false);
-    }
-  }
-
   async function saveDetails() {
     if (!name.trim()) {
       setMessage("請填寫姓名");
@@ -172,8 +133,8 @@ export function MemberPage() {
       setMessage(profileError);
       return;
     }
-    if (phoneChanged && (!otpSent || otpCode.length !== 6)) {
-      setMessage("變更手機請先完成簡訊驗證");
+    if (!phone.trim()) {
+      setMessage("請填寫手機");
       return;
     }
 
@@ -195,8 +156,6 @@ export function MemberPage() {
           residenceOther: profileFields.residenceOther,
         },
       };
-      if (phoneChanged) body.otpCode = otpCode;
-
       const res = await api<{
         profile: { ageLabel: string; occupationLabel: string; residenceLabel: string };
         member: { name: string; phone: string };
@@ -239,7 +198,6 @@ export function MemberPage() {
     return (
       <PageShell title="會員資訊" leftAlign showMemberLink={false}>
         <p className="page-hint">請先完成會員註冊（以下欄位皆為必填）</p>
-        <p className="slot-meta">您的 LINE ID：{profile.userId}</p>
         <RegisterForm onRegistered={() => setRegistered(true)} />
       </PageShell>
     );
@@ -303,9 +261,6 @@ export function MemberPage() {
             </dl>
           ) : (
             <div className="member-profile-edit">
-              {devCode && (
-                <div className="dev-otp-hint">【開發模式】驗證碼：{devCode}</div>
-              )}
               <div className="form-group">
                 <label>
                   姓名 <span className="field-required">（必填）</span>
@@ -322,48 +277,13 @@ export function MemberPage() {
                 <label>
                   手機 <span className="field-required">（必填）</span>
                 </label>
-                <div className="phone-row">
-                  <input
-                    value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      setOtpSent(false);
-                      setOtpCode("");
-                    }}
-                    required
-                    inputMode="tel"
-                  />
-                  {phoneChanged && (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm"
-                      disabled={sendingOtp || cooldown > 0}
-                      onClick={sendOtp}
-                    >
-                      {cooldown > 0 ? `${cooldown}s` : sendingOtp ? "發送中…" : "驗證手機"}
-                    </button>
-                  )}
-                </div>
-                {phoneChanged && (
-                  <p className="slot-meta">變更手機需重新簡訊驗證</p>
-                )}
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  inputMode="tel"
+                />
               </div>
-              {phoneChanged && (
-                <div className="form-group">
-                  <label>
-                    簡訊驗證碼 <span className="field-required">（必填）</span>
-                  </label>
-                  <input
-                    value={otpCode}
-                    onChange={(e) =>
-                      setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    inputMode="numeric"
-                    maxLength={6}
-                    required
-                  />
-                </div>
-              )}
               <button
                 type="button"
                 className="btn btn-purple btn-lg"

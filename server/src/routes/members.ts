@@ -11,7 +11,6 @@ import {
   updateMemberProfile,
 } from "../services/memberService.js";
 import { syncMemberToSheetSafe } from "../services/googleSheetsService.js";
-import { sendOtp, verifyOtp } from "../services/otpService.js";
 
 export const membersRouter = Router();
 
@@ -40,25 +39,6 @@ membersRouter.get("/content/store", (_req, res) => {
   res.json(loadJson("store.json"));
 });
 
-membersRouter.post("/send-otp", (req, res) => {
-  const schema = z.object({ phone: z.string().min(8) });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "INVALID_PHONE" });
-  }
-
-  try {
-    const result = sendOtp(parsed.data.phone);
-    res.json({ ok: true, ...result });
-  } catch (error) {
-    const code = error instanceof Error ? error.message : "UNKNOWN";
-    if (code === "OTP_COOLDOWN") {
-      return res.status(429).json({ error: "OTP_COOLDOWN", message: "請稍候再重新發送" });
-    }
-    return res.status(400).json({ error: code });
-  }
-});
-
 membersRouter.get("/:lineUserId", (req, res) => {
   const member = getMember(req.params.lineUserId);
   if (!member) {
@@ -69,21 +49,16 @@ membersRouter.get("/:lineUserId", (req, res) => {
 
 membersRouter.post("/register", (req, res) => {
   const schema = z.object({
-    lineUserId: z.string().min(1),
+    lineUserId: z.string().regex(/^U[a-f0-9]{32}$/i, "INVALID_LINE_USER_ID"),
     displayName: z.string().default(""),
     name: z.string().min(1),
     phone: z.string().min(8),
-    otpCode: z.string().length(6),
     profile: profileSchema,
   });
 
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
-  }
-
-  if (!verifyOtp(parsed.data.phone, parsed.data.otpCode)) {
-    return res.status(400).json({ error: "INVALID_OTP", message: "簡訊驗證碼錯誤或已過期" });
   }
 
   const profile = parsed.data.profile;
@@ -150,7 +125,6 @@ membersRouter.patch("/:lineUserId/details", (req, res) => {
   const schema = z.object({
     name: z.string().min(1),
     phone: z.string().min(8),
-    otpCode: z.string().length(6).optional(),
     profile: profileSchema,
   });
   const parsed = schema.safeParse(req.body);
@@ -172,17 +146,6 @@ membersRouter.patch("/:lineUserId/details", (req, res) => {
   }
   if (profile.residenceKind === "other" && !profile.residenceOther?.trim()) {
     return res.status(400).json({ error: "RESIDENCE_OTHER_REQUIRED" });
-  }
-
-  const phoneChanged =
-    member.phone.replace(/\D/g, "") !== parsed.data.phone.replace(/\D/g, "");
-  if (phoneChanged) {
-    if (!parsed.data.otpCode || !verifyOtp(parsed.data.phone, parsed.data.otpCode)) {
-      return res.status(400).json({
-        error: "INVALID_OTP",
-        message: "變更手機請完成簡訊驗證",
-      });
-    }
   }
 
   try {

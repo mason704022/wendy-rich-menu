@@ -26,9 +26,20 @@ async function main() {
   const imagePath =
     process.env.RICH_MENU_IMAGE_PATH ??
     (fs.existsSync(defaultPng) ? defaultPng : defaultJpg);
-  const optimizedJpgPath = path.join(
+  const removeEdgeWhite = process.env.RICH_MENU_REMOVE_EDGE_WHITE !== "0";
+  const matteBackground =
+    process.env.RICH_MENU_MATTE ??
+    (removeEdgeWhite && imagePath.toLowerCase().endsWith(".png") ? "#e4d0b5" : undefined);
+  const preserveAlpha =
+    !matteBackground &&
+    (process.env.RICH_MENU_PRESERVE_ALPHA === "1" ||
+      (imagePath.toLowerCase().endsWith(".png") &&
+        process.env.RICH_MENU_PRESERVE_ALPHA !== "0"));
+  const optimizedUploadPath = path.join(
     path.dirname(imagePath),
-    "line-rich-menu-wendy-yunspa-style-upload.jpg"
+    preserveAlpha
+      ? "line-rich-menu-wendy-yunspa-style-upload.png"
+      : "line-rich-menu-wendy-yunspa-style-upload.jpg"
   );
 
   if (!fs.existsSync(imagePath)) {
@@ -41,13 +52,16 @@ async function main() {
   let contentType: "image/jpeg" | "image/png";
 
   const optimizedExists =
-    fs.existsSync(optimizedJpgPath) && fs.statSync(optimizedJpgPath).size <= MAX_BYTES;
+    fs.existsSync(optimizedUploadPath) &&
+    fs.statSync(optimizedUploadPath).size <= MAX_BYTES;
 
   if (optimizedExists && !process.env.RICH_MENU_FORCE_RECOMPRESS) {
-    uploadBuffer = fs.readFileSync(optimizedJpgPath);
-    contentType = "image/jpeg";
+    uploadBuffer = fs.readFileSync(optimizedUploadPath);
+    contentType = optimizedUploadPath.toLowerCase().endsWith(".png")
+      ? "image/png"
+      : "image/jpeg";
     console.log(
-      `Using optimized upload JPEG (${(uploadBuffer.length / 1024).toFixed(0)} KB): ${optimizedJpgPath}`
+      `Using optimized upload file (${(uploadBuffer.length / 1024).toFixed(0)} KB): ${optimizedUploadPath}`
     );
   } else {
     const originalSize = fs.statSync(imagePath).size;
@@ -59,7 +73,11 @@ async function main() {
       console.log("Image already under 1 MB, uploading as-is.");
     } else {
       console.log("Image exceeds 1 MB — compressing for LINE (high quality)...");
-      const compressed = await compressRichMenuImage(imagePath, optimizedJpgPath);
+      const compressed = await compressRichMenuImage(imagePath, optimizedUploadPath, {
+        preserveAlpha,
+        removeEdgeWhite,
+        matteBackground,
+      });
       uploadBuffer = compressed.buffer;
       contentType = compressed.contentType;
       if (compressed.savedPath) {

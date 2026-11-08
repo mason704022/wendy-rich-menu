@@ -23,6 +23,7 @@ interface Slot {
   canBookWaitlist: boolean;
   alreadyBooked: boolean;
   bookingClosed?: boolean;
+  displayOnlyFull?: boolean;
   sessionTitle: string;
   sessionIntro: string;
   sessionImageUrl: string;
@@ -70,6 +71,7 @@ export function BookingPage() {
       setSlots(
         a.slots.filter((s) => {
           if (s.alreadyBooked) return false;
+          if (s.displayOnlyFull) return true;
           if (s.canBookConfirmed || s.canBookWaitlist) return true;
           // 正取滿班仍顯示（按鈕反灰），其餘已截止／無法預約的不列出
           return !s.bookingClosed && s.confirmedCount >= s.maxConfirmed;
@@ -127,11 +129,13 @@ export function BookingPage() {
   }
 
   function slotCanBook(slot: Slot): boolean {
+    if (slot.displayOnlyFull) return false;
     const hasSessions = (remainingSessions ?? 0) > 0;
     return (slot.canBookConfirmed && hasSessions) || slot.canBookWaitlist;
   }
 
   function slotButtonLabel(slot: Slot): string {
+    if (slot.displayOnlyFull) return "正取已滿班";
     if (slot.bookingClosed) return "已截止預約";
     if (slot.canBookConfirmed && (remainingSessions ?? 0) <= 0) {
       return SESSIONS_REQUIRED_MSG;

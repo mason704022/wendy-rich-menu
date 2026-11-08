@@ -4,7 +4,7 @@ import { formatCoffeeDisplayName, getCoffeeItem } from "./coffeeMenuService.js";
 import { syncBookingToSheetSafe } from "./googleSheetsService.js";
 import { deductSession, getMember, refundSession } from "./memberService.js";
 import { resolveSessionTheme } from "./sessionThemeService.js";
-import { formatLocalDate } from "../utils/localDate.js";
+import { formatLocalDate, parseLocalDateString } from "../utils/localDate.js";
 import { SLOT_TEMPLATES } from "./slotTemplates.js";
 
 export { SLOT_TEMPLATES };
@@ -102,6 +102,8 @@ export interface SlotAvailability {
   canBookWaitlist: boolean;
   bookingClosed: boolean;
   alreadyBooked: boolean;
+  /** 特例：固定顯示滿班、不開放預約（前端一律列出） */
+  displayOnlyFull?: boolean;
   sessionTitle: string;
   sessionIntro: string;
   sessionImageUrl: string;
@@ -143,11 +145,10 @@ export function getAvailabilityForDate(
   slotDate: string,
   lineUserId?: string
 ): SlotAvailability[] {
-  const date = new Date(`${slotDate}T00:00:00`);
-  const weekday = date.getDay();
+  const weekday = parseLocalDateString(slotDate).getDay();
 
   return SLOT_TEMPLATES.filter((t) => t.weekday === weekday).map((template) => {
-    const confirmedCount = countByStatus(slotDate, template.startTime, "confirmed");
+    const rawConfirmed = countByStatus(slotDate, template.startTime, "confirmed");
     const waitlistCount = countByStatus(slotDate, template.startTime, "waitlist");
     const bookingClosed = !canBookSlot(slotDate, template.startTime);
     const alreadyBooked = lineUserId
@@ -157,16 +158,20 @@ export function getAvailabilityForDate(
     const displayOnlyFull = isDisplayOnlyFullSlot(slotDate, template.startTime);
 
     let canBookConfirmed =
-      !alreadyBooked && !bookingClosed && confirmedCount < MAX_CONFIRMED;
+      !alreadyBooked && !bookingClosed && rawConfirmed < MAX_CONFIRMED;
     let canBookWaitlist =
       !alreadyBooked &&
       !bookingClosed &&
-      confirmedCount >= MAX_CONFIRMED &&
+      rawConfirmed >= MAX_CONFIRMED &&
       waitlistCount < MAX_WAITLIST;
     if (displayOnlyFull) {
       canBookConfirmed = false;
       canBookWaitlist = false;
     }
+
+    const confirmedCount = displayOnlyFull
+      ? Math.max(rawConfirmed, MAX_CONFIRMED)
+      : rawConfirmed;
 
     return {
       slotDate,
@@ -180,6 +185,7 @@ export function getAvailabilityForDate(
       maxWaitlist: MAX_WAITLIST,
       bookingClosed,
       alreadyBooked,
+      displayOnlyFull: displayOnlyFull || undefined,
       sessionTitle: theme.title,
       sessionIntro: theme.intro,
       sessionImageUrl: theme.imageUrl,

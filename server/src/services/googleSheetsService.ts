@@ -55,6 +55,11 @@ export const MEMBER_HEADERS = [
 ];
 
 let sheetsClient: sheets_v4.Sheets | null = null;
+const ensuredHeaderTabs = new Set<string>();
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export type GoogleSheetsCredentialsSource = "inline" | "file" | "missing";
 
@@ -231,6 +236,9 @@ async function ensureHeaders(
   headers: string[],
   colCount = headers.length
 ): Promise<void> {
+  const cacheKey = `${tab}\t${colCount}`;
+  if (ensuredHeaderTabs.has(cacheKey)) return;
+
   const sheets = getSheetsClient();
   const { googleSheetsSpreadsheetId } = getConfig();
   if (!sheets || !googleSheetsSpreadsheetId) return;
@@ -252,6 +260,7 @@ async function ensureHeaders(
         requestBody: { values: [headers] },
       });
     }
+    ensuredHeaderTabs.add(cacheKey);
     return;
   }
 
@@ -261,6 +270,25 @@ async function ensureHeaders(
     valueInputOption: "RAW",
     requestBody: { values: [headers] },
   });
+  ensuredHeaderTabs.add(cacheKey);
+}
+
+async function loadColAMap(tab: string): Promise<Map<string, number>> {
+  const sheets = getSheetsClient();
+  const { googleSheetsSpreadsheetId } = getConfig();
+  const map = new Map<string, number>();
+  if (!sheets || !googleSheetsSpreadsheetId) return map;
+
+  const result = await sheets.spreadsheets.values.get({
+    spreadsheetId: googleSheetsSpreadsheetId,
+    range: `${tab}!A:A`,
+  });
+  const rows = result.data.values ?? [];
+  for (let i = 0; i < rows.length; i++) {
+    const value = rows[i][0];
+    if (value) map.set(String(value), i + 1);
+  }
+  return map;
 }
 
 async function findRowById(tab: string, id: number): Promise<number | null> {
@@ -355,6 +383,47 @@ export async function syncMemberToSheet(member: Member): Promise<void> {
     memberToRow(member),
     MEMBER_HEADERS.length
   );
+}
+
+/** 一次讀取 A 欄，批次更新會員（避免 Sheets API 429） */
+export async function syncAllMembersToSheet(): Promise<void> {
+  if (!isConfigured()) return;
+  const sheets = getSheetsClient();
+  const { googleSheetsSpreadsheetId, googleSheetsMembersTab } = getConfig();
+  if (!sheets || !googleSheetsSpreadsheetId) return;
+
+  const tab = googleSheetsMembersTab;
+  const colCount = MEMBER_HEADERS.length;
+  const endCol = String.fromCharCode(64 + colCount);
+
+  await ensureHeaders(tab, MEMBER_HEADERS, colCount);
+  let rowMap = await loadColAMap(tab);
+  const members = listAllMembers();
+
+  for (const member of members) {
+    const row = memberToRow(member);
+    const key = row[0];
+    const existingRow = rowMap.get(key);
+
+    if (existingRow) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: googleSheetsSpreadsheetId,
+        range: `${tab}!A${existingRow}:${endCol}${existingRow}`,
+        valueInputOption: "RAW",
+        requestBody: { values: [row] },
+      });
+    } else {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: googleSheetsSpreadsheetId,
+        range: `${tab}!A:${endCol}`,
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        requestBody: { values: [row] },
+      });
+      rowMap = await loadColAMap(tab);
+    }
+    await sleep(350);
+  }
 }
 
 export function syncBookingToSheetSafe(booking: Booking): void {

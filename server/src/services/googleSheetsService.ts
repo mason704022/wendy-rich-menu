@@ -42,7 +42,7 @@ const PURCHASE_HEADERS = [
   "確認時間",
 ];
 
-const MEMBER_HEADERS = [
+export const MEMBER_HEADERS = [
   "LINE User ID",
   "姓名",
   "手機",
@@ -51,6 +51,7 @@ const MEMBER_HEADERS = [
   "職業",
   "居住地",
   "註冊時間",
+  "現有堂數",
 ];
 
 let sheetsClient: sheets_v4.Sheets | null = null;
@@ -221,6 +222,7 @@ function memberToRow(member: Member): string[] {
     profile.occupationLabel,
     profile.residenceLabel,
     member.created_at,
+    String(member.remaining_sessions),
   ];
 }
 
@@ -241,7 +243,17 @@ async function ensureHeaders(
   });
 
   const firstRow = existing.data.values?.[0];
-  if (firstRow?.length) return;
+  if (firstRow?.length) {
+    if (firstRow.length < headers.length) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: googleSheetsSpreadsheetId,
+        range,
+        valueInputOption: "RAW",
+        requestBody: { values: [headers] },
+      });
+    }
+    return;
+  }
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: googleSheetsSpreadsheetId,
@@ -337,7 +349,12 @@ export async function syncPurchaseToSheet(purchase: Purchase): Promise<void> {
 export async function syncMemberToSheet(member: Member): Promise<void> {
   if (!isConfigured()) return;
   const { googleSheetsMembersTab } = getConfig();
-  await upsertRow(googleSheetsMembersTab, MEMBER_HEADERS, memberToRow(member), 8);
+  await upsertRow(
+    googleSheetsMembersTab,
+    MEMBER_HEADERS,
+    memberToRow(member),
+    MEMBER_HEADERS.length
+  );
 }
 
 export function syncBookingToSheetSafe(booking: Booking): void {

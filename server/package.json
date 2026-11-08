@@ -15,6 +15,7 @@
     "reset-member": "tsx src/scripts/reset-member.ts",
     "clear-members-bookings": "tsx src/scripts/clear-members-bookings.ts",
     "fill-slot-confirmed": "tsx src/scripts/fill-slot-confirmed.ts",
+    "apply-legacy-credits": "tsx src/scripts/apply-legacy-session-credits.ts",
     "edit-rich-menu": "tsx src/scripts/edit-rich-menu-image.ts",
     "generate-rich-menu": "tsx src/scripts/generate-rich-menu-v2.ts",
     "db:init": "tsx src/db/init.ts"

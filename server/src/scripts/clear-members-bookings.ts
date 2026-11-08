@@ -9,20 +9,10 @@ import { getConfig, resolveServerPath } from "../config.js";
 import {
   getGoogleSheetsDiagnostics,
   isGoogleSheetsConfigured,
+  MEMBER_HEADERS,
 } from "../services/googleSheetsService.js";
 import fs from "fs";
 import path from "path";
-
-const MEMBER_HEADERS = [
-  "LINE User ID",
-  "姓名",
-  "手機",
-  "LINE顯示名稱",
-  "年齡",
-  "職業",
-  "居住地",
-  "註冊時間",
-];
 
 const BOOKING_HEADERS = [
   "預約編號",

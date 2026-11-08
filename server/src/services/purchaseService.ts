@@ -4,9 +4,8 @@ import {
   releaseByPurchase,
   reserveForPurchase,
 } from "./couponService.js";
-import { addSessions } from "./memberService.js";
-import { syncPurchaseToSheetSafe } from "./googleSheetsService.js";
-import { getMember } from "./memberService.js";
+import { addSessions, getMember } from "./memberService.js";
+import { syncMemberToSheetSafe, syncPurchaseToSheetSafe } from "./googleSheetsService.js";
 
 export interface Purchase {
   id: number;
@@ -116,6 +115,8 @@ export function confirmPurchase(id: number): Purchase {
   }
   const updated = getPurchase(id)!;
   syncPurchaseToSheetSafe(updated);
+  const member = getMember(purchase.line_user_id);
+  if (member) syncMemberToSheetSafe(member);
   return updated;
 }
 

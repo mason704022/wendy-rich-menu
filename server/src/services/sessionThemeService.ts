@@ -238,16 +238,6 @@ function findWeekTheme(
   return weeks.find((w) => w.weekStart === weekStart);
 }
 
-function findFallbackWeekTheme(
-  weeks: WeekSessionTheme[],
-  weekStart: string
-): WeekSessionTheme | undefined {
-  const candidates = weeks
-    .filter((w) => w.weekStart <= weekStart && hasThemeContent(w))
-    .sort((a, b) => b.weekStart.localeCompare(a.weekStart));
-  return candidates[0];
-}
-
 export function resolveSessionTheme(
   slotDate: string,
   startTime: string,
@@ -267,9 +257,7 @@ export function resolveSessionTheme(
   }
 
   const weekStart = getWeekStart(slotDate);
-  const theme =
-    findWeekTheme(data.weeks, weekStart) ??
-    findFallbackWeekTheme(data.weeks, weekStart);
+  const theme = findWeekTheme(data.weeks, weekStart);
 
   if (theme && hasThemeContent(theme)) {
     return {

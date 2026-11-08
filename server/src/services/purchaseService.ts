@@ -47,9 +47,9 @@ export function createPurchase(input: {
     .prepare(
       `INSERT INTO purchases (
          line_user_id, sessions_count, amount, original_amount, discount_amount,
-         coupon_assignment_id, status, payer_name, transfer_last5
+         coupon_assignment_id, status, payer_name, transfer_last5, created_at
        )
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now', '+8 hours'))`
     )
     .run(
       input.lineUserId,
@@ -107,7 +107,7 @@ export function confirmPurchase(id: number): Purchase {
   if (purchase.status !== "pending") throw new Error("PURCHASE_NOT_PENDING");
 
   db.prepare(
-    `UPDATE purchases SET status = 'confirmed', confirmed_at = datetime('now') WHERE id = ?`
+    `UPDATE purchases SET status = 'confirmed', confirmed_at = datetime('now', '+8 hours') WHERE id = ?`
   ).run(id);
 
   addSessions(purchase.line_user_id, purchase.sessions_count);

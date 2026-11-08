@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getConfig, SERVER_ROOT } from "./config.js";
+import { getConfig, getWritableContentRoot, SERVER_ROOT } from "./config.js";
 import { initDatabase } from "./db/index.js";
 import { getGoogleSheetsDiagnostics } from "./services/googleSheetsService.js";
 import { adminRouter } from "./routes/admin.js";
@@ -13,11 +13,13 @@ import { purchasesRouter } from "./routes/purchases.js";
 import { registerLineWebhook } from "./webhook/line.js";
 import { startClassOpeningScheduler } from "./services/classOpeningService.js";
 import { startSessionThemeReminderScheduler } from "./services/sessionThemeReminderService.js";
+import { seedWritableContentIfNeeded } from "./services/contentSeedService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { port } = getConfig();
 
 initDatabase();
+seedWritableContentIfNeeded();
 startClassOpeningScheduler();
 startSessionThemeReminderScheduler();
 
@@ -43,8 +45,10 @@ app.use("/api", (_req, res) => {
   res.status(404).json({ error: "API_NOT_FOUND" });
 });
 
-const contentDir = path.join(SERVER_ROOT, "content");
-app.use("/content", express.static(contentDir));
+const bundledContentDir = path.join(SERVER_ROOT, "content");
+const writableContentDir = getWritableContentRoot();
+app.use("/content", express.static(writableContentDir));
+app.use("/content", express.static(bundledContentDir));
 
 const liffDist = path.join(__dirname, "../../liff/dist");
 app.use(express.static(liffDist));

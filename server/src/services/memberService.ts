@@ -138,8 +138,9 @@ export function registerMember(input: {
     `INSERT INTO members (
        line_user_id, display_name, name, phone,
        age_range, occupation, occupation_other,
-       residence_kind, residence_district, residence_other
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       residence_kind, residence_district, residence_other,
+       created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'))`
   ).run(
     input.lineUserId,
     input.displayName,

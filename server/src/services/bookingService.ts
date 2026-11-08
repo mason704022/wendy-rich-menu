@@ -12,6 +12,17 @@ export { SLOT_TEMPLATES };
 export const MAX_CONFIRMED = 10;
 export const MAX_WAITLIST = 2;
 
+/** 特例：僅顯示滿班、不開放正取／備取預約 */
+const DISPLAY_ONLY_FULL_SLOTS: { slotDate: string; startTime: string }[] = [
+  { slotDate: "2026-11-11", startTime: "09:00" },
+];
+
+function isDisplayOnlyFullSlot(slotDate: string, startTime: string): boolean {
+  return DISPLAY_ONLY_FULL_SLOTS.some(
+    (s) => s.slotDate === slotDate && s.startTime === startTime
+  );
+}
+
 export function slotLabelForBooking(booking: Booking): string {
   const template = SLOT_TEMPLATES.find((t) => t.weekday === booking.weekday);
   return template?.label ?? "";
@@ -143,6 +154,19 @@ export function getAvailabilityForDate(
       ? hasActiveBooking(lineUserId, slotDate, template.startTime)
       : false;
     const theme = resolveSessionTheme(slotDate, template.startTime, template.weekday);
+    const displayOnlyFull = isDisplayOnlyFullSlot(slotDate, template.startTime);
+
+    let canBookConfirmed =
+      !alreadyBooked && !bookingClosed && confirmedCount < MAX_CONFIRMED;
+    let canBookWaitlist =
+      !alreadyBooked &&
+      !bookingClosed &&
+      confirmedCount >= MAX_CONFIRMED &&
+      waitlistCount < MAX_WAITLIST;
+    if (displayOnlyFull) {
+      canBookConfirmed = false;
+      canBookWaitlist = false;
+    }
 
     return {
       slotDate,
@@ -159,13 +183,8 @@ export function getAvailabilityForDate(
       sessionTitle: theme.title,
       sessionIntro: theme.intro,
       sessionImageUrl: theme.imageUrl,
-      canBookConfirmed:
-        !alreadyBooked && !bookingClosed && confirmedCount < MAX_CONFIRMED,
-      canBookWaitlist:
-        !alreadyBooked &&
-        !bookingClosed &&
-        confirmedCount >= MAX_CONFIRMED &&
-        waitlistCount < MAX_WAITLIST,
+      canBookConfirmed,
+      canBookWaitlist,
     };
   });
 }
@@ -214,6 +233,9 @@ export function createBooking(input: {
   const slots = getAvailabilityForDate(input.slotDate, input.lineUserId);
   const slot = slots.find((s) => s.startTime === input.startTime);
   if (!slot) throw new Error("INVALID_SLOT");
+  if (isDisplayOnlyFullSlot(input.slotDate, input.startTime)) {
+    throw new Error("SLOT_FULL");
+  }
   if (slot.alreadyBooked) throw new Error("ALREADY_BOOKED");
   if (slot.bookingClosed || !canBookSlot(input.slotDate, input.startTime)) {
     throw new Error("BOOKING_CLOSED");
@@ -236,8 +258,8 @@ export function createBooking(input: {
   try {
     const result = db
       .prepare(
-        `INSERT INTO bookings (line_user_id, slot_date, weekday, start_time, end_time, status, coffee_item_id, coffee_temperature)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO bookings (line_user_id, slot_date, weekday, start_time, end_time, status, coffee_item_id, coffee_temperature, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'))`
       )
       .run(
         input.lineUserId,

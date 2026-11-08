@@ -27,7 +27,7 @@ export function initDatabase(dbPath = getDbPath()) {
       phone TEXT NOT NULL DEFAULT '',
       total_sessions INTEGER NOT NULL DEFAULT 0,
       remaining_sessions INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
     );
 
     CREATE TABLE IF NOT EXISTS purchases (
@@ -36,7 +36,7 @@ export function initDatabase(dbPath = getDbPath()) {
       sessions_count INTEGER NOT NULL,
       amount INTEGER NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('pending', 'confirmed', 'rejected')),
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours')),
       confirmed_at TEXT,
       FOREIGN KEY (line_user_id) REFERENCES members(line_user_id)
     );
@@ -49,7 +49,7 @@ export function initDatabase(dbPath = getDbPath()) {
       start_time TEXT NOT NULL,
       end_time TEXT NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('confirmed', 'waitlist', 'cancelled')),
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours')),
       FOREIGN KEY (line_user_id) REFERENCES members(line_user_id)
     );
 
@@ -62,7 +62,7 @@ export function initDatabase(dbPath = getDbPath()) {
       phone TEXT NOT NULL,
       code TEXT NOT NULL,
       expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
     );
 
     CREATE INDEX IF NOT EXISTS idx_otp_phone ON otp_codes(phone);
@@ -75,7 +75,7 @@ export function initDatabase(dbPath = getDbPath()) {
       plan_ids TEXT NOT NULL DEFAULT '[]',
       expires_at TEXT,
       note TEXT NOT NULL DEFAULT '',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
     );
 
     CREATE TABLE IF NOT EXISTS coupon_assignments (
@@ -83,7 +83,7 @@ export function initDatabase(dbPath = getDbPath()) {
       template_id INTEGER NOT NULL,
       line_user_id TEXT NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('available', 'reserved', 'used', 'expired')),
-      assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+      assigned_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours')),
       used_at TEXT,
       purchase_id INTEGER,
       FOREIGN KEY (template_id) REFERENCES coupon_templates(id),
@@ -99,7 +99,7 @@ export function initDatabase(dbPath = getDbPath()) {
       start_time TEXT NOT NULL,
       status TEXT NOT NULL CHECK(status IN ('opened', 'failed')),
       confirmed_count INTEGER NOT NULL,
-      notified_at TEXT NOT NULL DEFAULT (datetime('now')),
+      notified_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours')),
       PRIMARY KEY (slot_date, start_time)
     );
 

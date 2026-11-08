@@ -53,9 +53,10 @@
 
 | 掛載路徑 | 用途 |
 |----------|------|
-| `/app/server/data` | SQLite |
-| `/app/server/content` | 課程主題、上傳圖片 |
-| `/app/server/credentials` | Google 憑證（選填） |
+| `/app/server/data` | SQLite **＋** 課程主題／上傳圖（程式寫入 `data/content/`，只需這一顆 Volume） |
+| `/app/server/credentials` | Google 憑證（選填；可改放在 `data/credentials/` 同一顆 Volume） |
+
+> Railway 若只能掛 **一顆** Volume，請只掛 `/app/server/data`，並設定 `DATABASE_PATH=/app/server/data/wendy.db`（課程主題會自動存於 `/app/server/data/content/`，不必再掛 `/app/server/content`）。
 
 ### 4. 環境變數
 

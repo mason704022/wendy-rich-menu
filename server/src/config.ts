@@ -12,8 +12,27 @@ export function resolveServerPath(relativePath: string): string {
   return path.resolve(SERVER_ROOT, relativePath.replace(/^\.\//, ""));
 }
 
+/** Bundled JSON shipped with the app (courses, terms, …). */
+const BUNDLED_CONTENT_DIR = path.join(SERVER_ROOT, "content");
+
+/**
+ * Writable course themes + uploaded images. Defaults to DATABASE_PATH's directory + /content
+ * so one Railway Volume on /app/server/data keeps DB and themes together.
+ */
+export function getWritableContentRoot(): string {
+  const explicit = process.env.CONTENT_DIR?.trim();
+  if (explicit) return path.resolve(explicit);
+
+  const dbPath = process.env.DATABASE_PATH?.trim();
+  if (dbPath) {
+    return path.join(path.dirname(path.resolve(dbPath)), "content");
+  }
+
+  return BUNDLED_CONTENT_DIR;
+}
+
 export function loadJson<T>(filename: string): T {
-  const filePath = path.join(SERVER_ROOT, "content", filename);
+  const filePath = path.join(BUNDLED_CONTENT_DIR, filename);
   return JSON.parse(fs.readFileSync(filePath, "utf-8")) as T;
 }
 

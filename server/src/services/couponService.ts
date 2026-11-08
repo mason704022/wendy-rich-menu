@@ -301,7 +301,7 @@ export function markUsedByPurchase(purchaseId: number): void {
   const db = getDb();
   db.prepare(
     `UPDATE coupon_assignments
-     SET status = 'used', used_at = datetime('now')
+     SET status = 'used', used_at = datetime('now', '+8 hours')
      WHERE purchase_id = ? AND status = 'reserved'`
   ).run(purchaseId);
 }

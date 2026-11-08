@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import sharp from "sharp";
-import { SERVER_ROOT } from "../config.js";
+import { getWritableContentRoot, loadJson } from "../config.js";
 import { SLOT_TEMPLATES } from "./slotTemplates.js";
 import {
   formatLocalDate,
@@ -13,8 +13,13 @@ import {
 
 export { getWeekStart, todayIsoLocal } from "../utils/localDate.js";
 
-const THEMES_FILE = path.join(SERVER_ROOT, "content", "session-themes.json");
-const IMAGES_DIR = path.join(SERVER_ROOT, "content", "images", "sessions");
+function themesFile(): string {
+  return path.join(getWritableContentRoot(), "session-themes.json");
+}
+
+function imagesDir(): string {
+  return path.join(getWritableContentRoot(), "images", "sessions");
+}
 export const ADMIN_THEME_WEEK_COUNT = 5;
 
 export interface WeekSessionTheme {
@@ -43,15 +48,27 @@ export interface ResolvedSessionTheme {
   imageUrl: string;
 }
 
-const EMPTY_THEME: ResolvedSessionTheme = {
-  title: "",
-  intro: "",
-  imageUrl: "",
-};
+function platformDefaultTheme(): ResolvedSessionTheme {
+  try {
+    const courses = loadJson<{ courseName?: string; introduction?: string }>("courses.json");
+    return {
+      title: courses.courseName ?? "藏在咖啡廳裡的畫畫課",
+      intro: courses.introduction ?? "",
+      imageUrl: "/content/images/sessions/weekly-default.svg",
+    };
+  } catch {
+    return {
+      title: "藏在咖啡廳裡的畫畫課",
+      intro: "",
+      imageUrl: "/content/images/sessions/weekly-default.svg",
+    };
+  }
+}
 
 function ensureImagesDir() {
-  if (!fs.existsSync(IMAGES_DIR)) {
-    fs.mkdirSync(IMAGES_DIR, { recursive: true });
+  const dir = imagesDir();
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 }
 
@@ -190,17 +207,18 @@ function migrateLegacyData(raw: unknown): SessionThemesData {
 }
 
 export function getSessionThemes(): SessionThemesData {
-  if (!fs.existsSync(THEMES_FILE)) {
+  const file = themesFile();
+  if (!fs.existsSync(file)) {
     return { weeks: [], overrides: [] };
   }
-  const raw = JSON.parse(fs.readFileSync(THEMES_FILE, "utf-8"));
+  const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
   return migrateLegacyData(raw);
 }
 
 export function saveSessionThemes(data: SessionThemesData): void {
   ensureImagesDir();
   data.weeks.sort((a, b) => a.weekStart.localeCompare(b.weekStart));
-  fs.writeFileSync(THEMES_FILE, JSON.stringify(data, null, 2), "utf-8");
+  fs.writeFileSync(themesFile(), JSON.stringify(data, null, 2), "utf-8");
 }
 
 export function getSlotOptions() {
@@ -261,7 +279,7 @@ export function resolveSessionTheme(
     };
   }
 
-  return EMPTY_THEME;
+  return platformDefaultTheme();
 }
 
 export function listWeekThemesForAdmin(): WeekSessionTheme[] {
@@ -368,7 +386,7 @@ export async function saveUploadedSessionImage(buffer: Buffer): Promise<string> 
   ensureImagesDir();
 
   const filename = `${randomUUID()}.webp`;
-  const outPath = path.join(IMAGES_DIR, filename);
+  const outPath = path.join(imagesDir(), filename);
 
   await sharp(buffer)
     .rotate()

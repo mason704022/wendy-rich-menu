@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { LoadError, apiErrorMessage } from "../components/LoadError";
 import { RegisterForm, useMemberRegistered } from "../components/RegisterForm";
@@ -53,6 +54,9 @@ export function BookingPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [bookingTerms, setBookingTerms] = useState<PurchaseTerms | null>(null);
+  const [remainingSessions, setRemainingSessions] = useState<number | null>(null);
+
+  const SESSIONS_REQUIRED_MSG = "堂數不足請購買課程";
 
   const loadAvailability = useCallback(() => {
     return Promise.all([
@@ -63,7 +67,14 @@ export function BookingPage() {
         `/bookings/availability?from=${window.from}&to=${window.to}&lineUserId=${encodeURIComponent(profile.userId)}`
       ).then((a) => ({ a, b }))
     ).then(({ a, b }) => {
-      setSlots(a.slots.filter((s) => !s.alreadyBooked));
+      setSlots(
+        a.slots.filter((s) => {
+          if (s.alreadyBooked) return false;
+          if (s.canBookConfirmed || s.canBookWaitlist) return true;
+          // 正取滿班仍顯示（按鈕反灰），其餘已截止／無法預約的不列出
+          return !s.bookingClosed && s.confirmedCount >= s.maxConfirmed;
+        })
+      );
       setMyBookings(b.bookings);
     });
   }, [profile.userId]);
@@ -74,18 +85,26 @@ export function BookingPage() {
     Promise.all([
       api<{ title: string; items: CoffeeItem[] }>("/bookings/coffee-menu"),
       api<PurchaseTerms>("/bookings/booking-terms"),
+      api<{ remainingSessions: number }>(`/members/${profile.userId}/summary`),
       loadAvailability(),
     ])
-      .then(([menu, terms]) => {
+      .then(([menu, terms, summary]) => {
         setCoffeeMenu(menu);
         setBookingTerms(terms);
+        setRemainingSessions(summary.remainingSessions);
       })
       .catch((err) => setLoadError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, [loadAvailability]);
 
+  const refreshRemainingSessions = useCallback(() => {
+    return api<{ remainingSessions: number }>(`/members/${profile.userId}/summary`).then(
+      (summary) => setRemainingSessions(summary.remainingSessions)
+    );
+  }, [profile.userId]);
+
   function loadData() {
-    return loadAvailability();
+    return Promise.all([loadAvailability(), refreshRemainingSessions()]);
   }
 
   useEffect(() => {
@@ -98,8 +117,29 @@ export function BookingPage() {
   }, [registered, loadInitialData]);
 
   function openCoffeePicker(slot: Slot) {
-    setPendingSlot(slot);
     setError("");
+    const noSessions = (remainingSessions ?? 0) <= 0;
+    if (noSessions && slot.canBookConfirmed) {
+      setError(SESSIONS_REQUIRED_MSG);
+      return;
+    }
+    setPendingSlot(slot);
+  }
+
+  function slotCanBook(slot: Slot): boolean {
+    const hasSessions = (remainingSessions ?? 0) > 0;
+    return (slot.canBookConfirmed && hasSessions) || slot.canBookWaitlist;
+  }
+
+  function slotButtonLabel(slot: Slot): string {
+    if (slot.bookingClosed) return "已截止預約";
+    if (slot.canBookConfirmed && (remainingSessions ?? 0) <= 0) {
+      return SESSIONS_REQUIRED_MSG;
+    }
+    if (slot.canBookConfirmed) return "預約（正取）";
+    if (slot.canBookWaitlist) return "預約（備取）";
+    if (slot.confirmedCount >= slot.maxConfirmed) return "正取已滿班";
+    return "無法預約";
   }
 
   async function confirmBook(coffeeItemId: string) {
@@ -186,6 +226,15 @@ export function BookingPage() {
 
       {bookingTerms && <BookingTermsBlock terms={bookingTerms} />}
 
+      {remainingSessions !== null && remainingSessions <= 0 && (
+        <div className="error-box">
+          {SESSIONS_REQUIRED_MSG}{" "}
+          <Link to="/purchase" className="inline-link">
+            前往購買
+          </Link>
+        </div>
+      )}
+
       {myBookings.length > 0 && (
         <section className="info-card">
           <h2>近期預約</h2>
@@ -219,16 +268,8 @@ export function BookingPage() {
         <h2>可預約時段（兩週內）</h2>
         {slots.length === 0 && <p>近期無可預約時段</p>}
         {slots.map((slot) => {
-          const canBook = slot.canBookConfirmed || slot.canBookWaitlist;
-          const btnLabel = slot.bookingClosed
-            ? "已截止預約"
-            : slot.canBookConfirmed
-              ? "預約（正取）"
-              : slot.canBookWaitlist
-                ? "預約（備取）"
-                : slot.confirmedCount >= slot.maxConfirmed
-                  ? "正取已滿班"
-                  : "無法預約";
+          const canBook = slotCanBook(slot);
+          const btnLabel = slotButtonLabel(slot);
           return (
           <div className="slot-card" key={`${slot.slotDate}-${slot.startTime}`}>
             <div className="slot-preview">

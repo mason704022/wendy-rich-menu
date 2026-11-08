@@ -10,6 +10,8 @@ import { syncMemberToSheetSafe, syncPurchaseToSheetSafe } from "./googleSheetsSe
 export interface Purchase {
   id: number;
   line_user_id: string;
+  plan_id?: string;
+  plan_quantity?: number;
   sessions_count: number;
   amount: number;
   original_amount: number | null;
@@ -30,6 +32,8 @@ export interface PurchaseWithMember extends Purchase {
 
 export function createPurchase(input: {
   lineUserId: string;
+  planId?: string;
+  planQuantity?: number;
   sessionsCount: number;
   amount: number;
   originalAmount?: number;
@@ -42,16 +46,21 @@ export function createPurchase(input: {
   const originalAmount = input.originalAmount ?? input.amount;
   const discountAmount = input.discountAmount ?? 0;
 
+  const planQuantity = input.planQuantity ?? 1;
+  const planId = input.planId ?? "";
+
   const result = db
     .prepare(
       `INSERT INTO purchases (
-         line_user_id, sessions_count, amount, original_amount, discount_amount,
+         line_user_id, plan_id, plan_quantity, sessions_count, amount, original_amount, discount_amount,
          coupon_assignment_id, status, payer_name, transfer_last5, created_at
        )
-       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now', '+8 hours'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now', '+8 hours'))`
     )
     .run(
       input.lineUserId,
+      planId,
+      planQuantity,
       input.sessionsCount,
       input.amount,
       originalAmount,

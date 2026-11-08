@@ -35,6 +35,7 @@ export function PurchasePage() {
   const [loadError, setLoadError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const loadInitialData = useCallback(() => {
     setInitialLoading(true);
@@ -119,6 +120,7 @@ export function PurchasePage() {
         lineUserId: profile.userId,
         planId: selectedPlanId,
         couponAssignmentId: selectedCouponId,
+        quantity,
       }),
     })
       .then((res) => setPricePreview(res.preview))
@@ -127,7 +129,7 @@ export function PurchasePage() {
         setSelectedCouponId(null);
       })
       .finally(() => setCouponLoading(false));
-  }, [selectedCouponId, selectedPlanId, profile.userId]);
+  }, [selectedCouponId, selectedPlanId, quantity, profile.userId]);
 
   if (registered === null || initialLoading) {
     return <div className="loading">載入中…</div>;
@@ -155,6 +157,7 @@ export function PurchasePage() {
       const body: Record<string, unknown> = {
         lineUserId: p.userId,
         planId: selectedPlanId,
+        quantity,
         payerName: data.payerName,
         transferLast5: data.transferLast5,
       };
@@ -215,8 +218,11 @@ export function PurchasePage() {
         payment={payment}
         purchaseTerms={purchaseTerms}
         selectedPlanId={selectedPlanId}
+        quantity={quantity}
+        onQuantityChange={setQuantity}
         onSelectPlan={(id) => {
           setSelectedPlanId(id || null);
+          setQuantity(1);
           setSelectedCouponId(null);
           setPricePreview(null);
         }}

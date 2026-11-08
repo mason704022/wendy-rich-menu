@@ -27,12 +27,16 @@ export interface PaymentInfo {
   note: string;
 }
 
+const MAX_PURCHASE_QUANTITY = 5;
+
 interface Props {
   categories: PlanCategory[];
   payment: PaymentInfo;
   purchaseTerms: PurchaseTerms;
   selectedPlanId: string | null;
   onSelectPlan: (planId: string) => void;
+  quantity: number;
+  onQuantityChange: (quantity: number) => void;
   onSubmit: (data: { payerName: string; transferLast5: string }) => void;
   loading: boolean;
   onBack: () => void;
@@ -63,6 +67,8 @@ export function PlanSelector({
   purchaseTerms,
   selectedPlanId,
   onSelectPlan,
+  quantity,
+  onQuantityChange,
   onSubmit,
   loading,
   onBack,
@@ -78,7 +84,9 @@ export function PlanSelector({
     .flatMap((c) => c.plans)
     .find((p) => p.id === selectedPlanId);
 
-  const displayPrice = pricePreview?.final ?? selectedPlan?.price ?? 0;
+  const unitPrice = selectedPlan?.price ?? 0;
+  const displayPrice = pricePreview?.final ?? unitPrice * quantity;
+  const totalSessions = (selectedPlan?.sessionsCount ?? 0) * quantity;
   const hasDiscount = (pricePreview?.discount ?? 0) > 0;
 
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? "");
@@ -158,6 +166,36 @@ export function PlanSelector({
         })}
       </div>
 
+      {selectedPlan && (
+        <div className="plan-quantity">
+          <span className="plan-quantity-label">購買份數</span>
+          <div className="plan-quantity-stepper">
+            <button
+              type="button"
+              className="plan-quantity-btn"
+              disabled={quantity <= 1}
+              aria-label="減少份數"
+              onClick={() => onQuantityChange(quantity - 1)}
+            >
+              −
+            </button>
+            <span className="plan-quantity-value">{quantity}</span>
+            <button
+              type="button"
+              className="plan-quantity-btn"
+              disabled={quantity >= MAX_PURCHASE_QUANTITY}
+              aria-label="增加份數"
+              onClick={() => onQuantityChange(quantity + 1)}
+            >
+              +
+            </button>
+          </div>
+          <p className="plan-quantity-hint">
+            {selectedPlan.sessionsCount} 堂 × {quantity} 份 → 共 {totalSessions} 堂
+          </p>
+        </div>
+      )}
+
       {selectedPlan && onSelectCoupon && (
         <CouponPicker
           coupons={coupons}
@@ -173,8 +211,10 @@ export function PlanSelector({
           {selectedPlan ? (
             <>
               <span>
-                已選 1 項 / {selectedPlan.sessionsCount} 堂 / NT$
-                {displayPrice.toLocaleString()}
+                {quantity > 1
+                  ? `${selectedPlan.sessionsCount} 堂 × ${quantity} 份 / 共 ${totalSessions} 堂 / `
+                  : `已選 1 項 / ${totalSessions} 堂 / `}
+                NT${displayPrice.toLocaleString()}
                 {hasDiscount && (
                   <span className="plan-summary-discount">（已折扣）</span>
                 )}

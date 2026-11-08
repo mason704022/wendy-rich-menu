@@ -986,6 +986,52 @@ body {
   color: var(--text);
 }
 
+.plan-quantity {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--surface-muted, #f7f5f2);
+}
+
+.plan-quantity-label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.plan-quantity-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.plan-quantity-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.plan-quantity-btn:disabled {
+  opacity: 0.35;
+}
+
+.plan-quantity-value {
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.plan-quantity-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
 .plan-coupon-hint {
   margin: 8px 0 0;
   font-size: 0.82rem;

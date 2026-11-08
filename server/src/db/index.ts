@@ -164,6 +164,12 @@ function migrateSchema(db: DatabaseSync) {
   if (!names.has("coupon_assignment_id")) {
     db.exec(`ALTER TABLE purchases ADD COLUMN coupon_assignment_id INTEGER`);
   }
+  if (!names.has("plan_quantity")) {
+    db.exec(`ALTER TABLE purchases ADD COLUMN plan_quantity INTEGER NOT NULL DEFAULT 1`);
+  }
+  if (!names.has("plan_id")) {
+    db.exec(`ALTER TABLE purchases ADD COLUMN plan_id TEXT NOT NULL DEFAULT ''`);
+  }
 }
 
 export type DatabaseInstance = DatabaseSync;

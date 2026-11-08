@@ -20,6 +20,10 @@ interface PendingPurchase {
 
   sessions_count: number;
 
+  plan_quantity?: number;
+
+  plan_id?: string;
+
   amount: number;
 
   original_amount: number | null;
@@ -414,7 +418,11 @@ export function AdminPage() {
 
               <p className="slot-meta">
 
-                {p.sessions_count} 堂 · 實付 NT${p.amount.toLocaleString()}
+                {(p.plan_quantity ?? 1) > 1
+                  ? `${Math.round(p.sessions_count / (p.plan_quantity ?? 1))} 堂 × ${p.plan_quantity}（共 ${p.sessions_count} 堂）`
+                  : `${p.sessions_count} 堂`}
+                {" · "}
+                實付 NT${p.amount.toLocaleString()}
 
               </p>
 

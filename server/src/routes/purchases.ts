@@ -19,6 +19,19 @@ import {
 
 export const purchasesRouter = Router();
 
+const MAX_PURCHASE_QUANTITY = 5;
+
+function scaleAmounts(
+  unit: { original: number; discount: number; final: number },
+  quantity: number
+) {
+  return {
+    original: unit.original * quantity,
+    discount: unit.discount * quantity,
+    final: unit.final * quantity,
+  };
+}
+
 interface Plan {
   id: string;
   name: string;
@@ -80,6 +93,7 @@ purchasesRouter.post("/coupons/preview", (req, res) => {
     lineUserId: z.string().min(1),
     planId: z.string().min(1),
     couponAssignmentId: z.number().int().positive(),
+    quantity: z.number().int().min(1).max(MAX_PURCHASE_QUANTITY).optional(),
   });
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
@@ -92,13 +106,22 @@ purchasesRouter.post("/coupons/preview", (req, res) => {
   }
 
   try {
-    const calc = validateAndCalculate(
+    const quantity = parsed.data.quantity ?? 1;
+    const unit = validateAndCalculate(
       parsed.data.couponAssignmentId,
       parsed.data.lineUserId,
       parsed.data.planId,
       plan.price
     );
-    res.json({ preview: calc });
+    const scaled = scaleAmounts(unit, quantity);
+    res.json({
+      preview: {
+        ...unit,
+        original: scaled.original,
+        discount: scaled.discount,
+        final: scaled.final,
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     res.status(400).json({ error: message });
@@ -116,6 +139,7 @@ purchasesRouter.post("/", async (req, res) => {
     payerName: z.string().min(1),
     transferLast5: z.string().regex(/^\d{5}$/),
     couponAssignmentId: z.number().int().positive().optional(),
+    quantity: z.number().int().min(1).max(MAX_PURCHASE_QUANTITY).optional(),
   });
 
   const parsed = schema.safeParse(req.body);
@@ -133,38 +157,45 @@ purchasesRouter.post("/", async (req, res) => {
     return res.status(400).json({ error: "INVALID_PLAN" });
   }
 
-  let originalAmount = plan.price;
+  const quantity = parsed.data.quantity ?? 1;
+
+  let originalAmount = plan.price * quantity;
   let discountAmount = 0;
-  let finalAmount = plan.price;
+  let finalAmount = plan.price * quantity;
   let couponAssignmentId: number | null = null;
   let couponName = "";
 
   if (parsed.data.couponAssignmentId) {
     try {
-      const calc = validateAndCalculate(
+      const unit = validateAndCalculate(
         parsed.data.couponAssignmentId,
         parsed.data.lineUserId,
         parsed.data.planId,
         plan.price
       );
-      originalAmount = calc.original;
-      discountAmount = calc.discount;
-      finalAmount = calc.final;
+      const scaled = scaleAmounts(unit, quantity);
+      originalAmount = scaled.original;
+      discountAmount = scaled.discount;
+      finalAmount = scaled.final;
       couponAssignmentId = parsed.data.couponAssignmentId;
-      couponName = calc.templateName;
+      couponName = unit.templateName;
     } catch (error) {
       const message = error instanceof Error ? error.message : "UNKNOWN";
       return res.status(400).json({ error: message });
     }
   }
 
+  const sessionsCount = plan.sessionsCount * quantity;
+
   const purchase = createPurchase({
     lineUserId: parsed.data.lineUserId,
+    planId: plan.id,
+    planQuantity: quantity,
     amount: finalAmount,
     originalAmount,
     discountAmount,
     couponAssignmentId,
-    sessionsCount: plan.sessionsCount,
+    sessionsCount,
     payerName: parsed.data.payerName,
     transferLast5: parsed.data.transferLast5,
   });
@@ -176,7 +207,11 @@ purchasesRouter.post("/", async (req, res) => {
 
   const { liffBaseUrl } = getConfig();
   const adminPageHint = liffBaseUrl ? `\n\n管理頁：${liffBaseUrl}?page=admin` : "";
-  const adminMsg = `【待確認付款】\n匯款人：${parsed.data.payerName}\n後五碼：${parsed.data.transferLast5}\n會員：${member.name}（${member.display_name}）\n電話：${member.phone}\n堂數：${purchase.sessions_count}\n金額：NT$${purchase.amount.toLocaleString()}${discountLine}\n訂單編號：${purchase.id}${adminPageHint}`;
+  const sessionsLine =
+    quantity > 1
+      ? `方案：${plan.name} × ${quantity}（共 ${purchase.sessions_count} 堂）`
+      : `方案：${plan.name}（${purchase.sessions_count} 堂）`;
+  const adminMsg = `【待確認付款】\n匯款人：${parsed.data.payerName}\n後五碼：${parsed.data.transferLast5}\n會員：${member.name}（${member.display_name}）\n電話：${member.phone}\n${sessionsLine}\n金額：NT$${purchase.amount.toLocaleString()}${discountLine}\n訂單編號：${purchase.id}${adminPageHint}`;
 
   res.status(201).json({ purchase });
 

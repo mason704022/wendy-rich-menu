@@ -194,6 +194,12 @@ function bookingToRow(booking: Booking): string[] {
   ];
 }
 
+function planSessionsPerUnit(purchase: Purchase): number {
+  const qty = purchase.plan_quantity ?? 1;
+  if (qty <= 1) return purchase.sessions_count;
+  return Math.round(purchase.sessions_count / qty);
+}
+
 function purchaseToRow(purchase: Purchase): string[] {
   const member = getMember(purchase.line_user_id);
   const original = purchase.original_amount ?? purchase.amount;
@@ -205,7 +211,9 @@ function purchaseToRow(purchase: Purchase): string[] {
     member?.phone ?? "",
     purchase.payer_name,
     purchase.transfer_last5,
-    String(purchase.sessions_count),
+    (purchase.plan_quantity ?? 1) > 1
+      ? `${planSessionsPerUnit(purchase)}×${purchase.plan_quantity ?? 1}=${purchase.sessions_count}`
+      : String(purchase.sessions_count),
     String(original),
     String(purchase.discount_amount ?? 0),
     String(purchase.amount),

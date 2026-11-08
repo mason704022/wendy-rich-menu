@@ -60,6 +60,9 @@
 
 ### 4. 環境變數
 
+開班成功後會另發「畫畫課程預約通知」給 `DRINK_ORDER_LINE_USER_ID`（回咖啡老闆），內容含**正取人數**、**飲品數量彙整**與學員明細。請確認對方已加官方帳號好友。
+
+
 複製 [`server/.env.example`](../server/.env.example) 至 Railway Variables。
 
 建置 LIFF 還需：

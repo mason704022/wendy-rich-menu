@@ -20,14 +20,10 @@ interface Props {
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID ?? "";
 
-function isValidLineUserId(id: string): boolean {
-  return /^U[a-f0-9]{32}$/i.test(id.trim());
-}
-
 export function RegisterForm({ onRegistered, onCancel }: Props) {
   const profile = getProfile();
-  const lineIdFromLiff = Boolean(LIFF_ID) && profile.userId !== "dev-user";
-  const [lineUserId, setLineUserId] = useState(profile.userId);
+  const nicknameFromLiff = Boolean(LIFF_ID) && profile.userId !== "dev-user";
+  const [displayName, setDisplayName] = useState(profile.displayName);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [profileFields, setProfileFields] = useState(emptyMemberProfileFields());
@@ -49,8 +45,8 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
   }, [profile.userId]);
 
   useEffect(() => {
-    setLineUserId(profile.userId);
-  }, [profile.userId]);
+    setDisplayName(profile.displayName);
+  }, [profile.displayName]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,17 +54,9 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
       setError("請填寫姓名");
       return;
     }
-    const lineId = lineUserId.trim();
-    if (!lineId) {
-      setError("請填寫 LINE ID");
-      return;
-    }
-    if (!isValidLineUserId(lineId)) {
-      setError("LINE ID 格式不正確（應為 U 開頭的一組英數）");
-      return;
-    }
-    if (lineIdFromLiff && lineId !== profile.userId) {
-      setError("LINE ID 須與目前登入的 LINE 帳號一致");
+    const lineNickname = displayName.trim();
+    if (!lineNickname) {
+      setError("請填寫 LINE 暱稱");
       return;
     }
     if (!phone.trim()) {
@@ -86,8 +74,8 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
       await api("/members/register", {
         method: "POST",
         body: JSON.stringify({
-          lineUserId: lineId,
-          displayName: profile.displayName,
+          lineUserId: profile.userId,
+          displayName: lineNickname,
           name,
           phone,
           profile: {
@@ -141,22 +129,19 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
         <form onSubmit={submit}>
           <div className="form-group">
             <label>
-              LINE ID <span className="field-required">（必填）</span>
+              LINE 暱稱 <span className="field-required">（必填）</span>
             </label>
             <input
-              value={lineUserId}
-              onChange={(e) => setLineUserId(e.target.value.trim())}
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
               required
-              readOnly={lineIdFromLiff}
-              className={lineIdFromLiff ? "input-readonly" : undefined}
-              placeholder="Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              autoComplete="off"
-              spellCheck={false}
+              placeholder="您在 LINE 上顯示的名稱"
+              autoComplete="nickname"
             />
             <p className="slot-meta">
-              {lineIdFromLiff
-                ? "已由 LINE 自動帶入，與您登入的帳號綁定。"
-                : "請貼上您的 LINE User ID（開發測試可手動輸入）。"}
+              {nicknameFromLiff
+                ? "已預填您的 LINE 顯示名稱，若有誤可再修改。"
+                : "開發測試時請自行輸入暱稱。"}
             </p>
           </div>
           <div className="form-group">
@@ -190,7 +175,7 @@ export function RegisterForm({ onRegistered, onCancel }: Props) {
             type="submit"
             disabled={
               loading ||
-              !lineUserId.trim() ||
+              !displayName.trim() ||
               !name.trim() ||
               !phone.trim() ||
               validateMemberProfile(profileFields) !== null

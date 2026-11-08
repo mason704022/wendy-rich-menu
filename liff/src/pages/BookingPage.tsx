@@ -21,6 +21,7 @@ interface Slot {
   canBookConfirmed: boolean;
   canBookWaitlist: boolean;
   alreadyBooked: boolean;
+  bookingClosed?: boolean;
   sessionTitle: string;
   sessionIntro: string;
   sessionImageUrl: string;
@@ -62,9 +63,7 @@ export function BookingPage() {
         `/bookings/availability?from=${window.from}&to=${window.to}&lineUserId=${encodeURIComponent(profile.userId)}`
       ).then((a) => ({ a, b }))
     ).then(({ a, b }) => {
-      setSlots(
-        a.slots.filter((s) => (s.canBookConfirmed || s.canBookWaitlist) && !s.alreadyBooked)
-      );
+      setSlots(a.slots.filter((s) => !s.alreadyBooked));
       setMyBookings(b.bookings);
     });
   }, [profile.userId]);
@@ -219,7 +218,18 @@ export function BookingPage() {
       <section className="info-card">
         <h2>可預約時段（兩週內）</h2>
         {slots.length === 0 && <p>近期無可預約時段</p>}
-        {slots.map((slot) => (
+        {slots.map((slot) => {
+          const canBook = slot.canBookConfirmed || slot.canBookWaitlist;
+          const btnLabel = slot.bookingClosed
+            ? "已截止預約"
+            : slot.canBookConfirmed
+              ? "預約（正取）"
+              : slot.canBookWaitlist
+                ? "預約（備取）"
+                : slot.confirmedCount >= slot.maxConfirmed
+                  ? "正取已滿班"
+                  : "無法預約";
+          return (
           <div className="slot-card" key={`${slot.slotDate}-${slot.startTime}`}>
             <div className="slot-preview">
               {slot.sessionImageUrl ? (
@@ -243,11 +253,16 @@ export function BookingPage() {
                 </p>
               </div>
             </div>
-            <button className="btn btn-purple" onClick={() => openCoffeePicker(slot)}>
-              {slot.canBookConfirmed ? "預約（正取）" : "預約（備取）"}
+            <button
+              className="btn btn-purple"
+              disabled={!canBook}
+              onClick={() => openCoffeePicker(slot)}
+            >
+              {btnLabel}
             </button>
           </div>
-        ))}
+          );
+        })}
       </section>
 
       <CoffeePickerSheet

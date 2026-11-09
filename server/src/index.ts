@@ -13,6 +13,7 @@ import { purchasesRouter } from "./routes/purchases.js";
 import { registerLineWebhook } from "./webhook/line.js";
 import { startClassOpeningScheduler } from "./services/classOpeningService.js";
 import { startSessionThemeReminderScheduler } from "./services/sessionThemeReminderService.js";
+import { startScheduledClassNotifyScheduler } from "./services/scheduledClassNotifyService.js";
 import { seedWritableContentIfNeeded } from "./services/contentSeedService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +23,7 @@ initDatabase();
 seedWritableContentIfNeeded();
 startClassOpeningScheduler();
 startSessionThemeReminderScheduler();
+startScheduledClassNotifyScheduler();
 
 const app = express();
 

@@ -27,12 +27,20 @@ function drinkLabelForBooking(booking: Booking): string {
   return formatCoffeeDisplayName(booking.coffee_item_id, booking.coffee_temperature);
 }
 
+export type StaffRosterExtra = { name: string; drinkLabel: string };
+
 /** 依品項彙整杯數（送回咖啡備料） */
-function summarizeDrinkCounts(bookings: Booking[]): string[] {
+function summarizeDrinkCounts(
+  bookings: Booking[],
+  rosterExtras: StaffRosterExtra[] = []
+): string[] {
   const counts = new Map<string, number>();
   for (const b of bookings) {
     const label = drinkLabelForBooking(b);
     counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  for (const extra of rosterExtras) {
+    counts.set(extra.drinkLabel, (counts.get(extra.drinkLabel) ?? 0) + 1);
   }
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh-Hant"))
@@ -70,21 +78,22 @@ export function buildStaffClassOpenedMessage(
   startTime: string,
   endTime: string,
   confirmedCount: number,
-  confirmedBookings: Booking[]
+  confirmedBookings: Booking[],
+  rosterExtras: StaffRosterExtra[] = []
 ): string {
   const summaryLines =
-    confirmedBookings.length === 0
+    confirmedBookings.length === 0 && rosterExtras.length === 0
       ? ["（無正取學員）"]
-      : summarizeDrinkCounts(confirmedBookings);
+      : summarizeDrinkCounts(confirmedBookings, rosterExtras);
 
-  const detailLines =
-    confirmedBookings.length === 0
-      ? []
-      : confirmedBookings.map((b) => {
-          const member = getMember(b.line_user_id);
-          const name = member?.name?.trim() || "學員";
-          return `${name}：${drinkLabelForBooking(b)}`;
-        });
+  const detailLines = [
+    ...confirmedBookings.map((b) => {
+      const member = getMember(b.line_user_id);
+      const name = member?.name?.trim() || "學員";
+      return `${name}：${drinkLabelForBooking(b)}`;
+    }),
+    ...rosterExtras.map((e) => `${e.name}：${e.drinkLabel}`),
+  ];
 
   return [
     "☕️🪑 畫畫課程預約通知",

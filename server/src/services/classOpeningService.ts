@@ -3,6 +3,7 @@ import { getConfig } from "../config.js";
 import { notifyAdmin, notifyUser } from "../lineClient.js";
 import {
   getConfirmedCountForSlot,
+  getManualClassNotifyRule,
   listActiveBookingsForSlot,
   type Booking,
 } from "./bookingService.js";
@@ -35,6 +36,7 @@ function listSlotsPendingDecision(): SlotKey[] {
 
   const now = Date.now();
   return rows.filter((s) => {
+    if (getManualClassNotifyRule(s.slotDate, s.startTime)) return false;
     if (getSlotStartMs(s.slotDate, s.startTime) <= now) return false;
     if (!isWithinBookingCutoff(s.slotDate, s.startTime)) return false;
     const decided = db

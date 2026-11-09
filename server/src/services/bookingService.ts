@@ -17,6 +17,22 @@ const DISPLAY_ONLY_FULL_SLOTS: { slotDate: string; startTime: string }[] = [
   { slotDate: "2026-11-11", startTime: "09:00" },
 ];
 
+/** 手動滿班名單：不走自動開班排程，滿員後由腳本於開課前一日發通知 */
+export const MANUAL_CLASS_NOTIFY_SLOTS: {
+  slotDate: string;
+  startTime: string;
+  minConfirmed: number;
+}[] = [{ slotDate: "2026-11-11", startTime: "09:00", minConfirmed: 10 }];
+
+export function getManualClassNotifyRule(
+  slotDate: string,
+  startTime: string
+): { minConfirmed: number } | undefined {
+  return MANUAL_CLASS_NOTIFY_SLOTS.find(
+    (s) => s.slotDate === slotDate && s.startTime === startTime
+  );
+}
+
 function isDisplayOnlyFullSlot(slotDate: string, startTime: string): boolean {
   return DISPLAY_ONLY_FULL_SLOTS.some(
     (s) => s.slotDate === slotDate && s.startTime === startTime

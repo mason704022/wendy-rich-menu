@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { loadJson } from "../config.js";
+import { getConfig, loadJson } from "../config.js";
+import { notifyAdmin } from "../lineClient.js";
 import {
   findMemberByPhone,
   getMember,
@@ -89,6 +90,19 @@ membersRouter.post("/register", (req, res) => {
     });
     syncMemberToSheetSafe(member);
     res.json({ member, isNew, profile: memberProfileSummary(member) });
+
+    if (isNew) {
+      void (async () => {
+        try {
+          const { liffBaseUrl } = getConfig();
+          const adminPageHint = liffBaseUrl ? `\n\n管理頁：${liffBaseUrl}?page=admin` : "";
+          const adminMsg = `【新會員註冊】\n姓名：${member.name}\nLINE 暱稱：${member.display_name || "—"}\n手機：${member.phone}\nLINE ID：${member.line_user_id}${adminPageHint}`;
+          await notifyAdmin(adminMsg);
+        } catch (notifyError) {
+          console.error("[Register notify failed]", notifyError);
+        }
+      })();
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN";
     if (message === "PHONE_ALREADY_REGISTERED") {

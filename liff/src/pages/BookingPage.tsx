@@ -269,7 +269,7 @@ export function BookingPage() {
       )}
 
       <section className="info-card">
-        <h2>可預約時段（兩週內）</h2>
+        <h2>可預約時段（一週內）</h2>
         {slots.length === 0 && <p>近期無可預約時段</p>}
         {slots.map((slot) => {
           const canBook = slotCanBook(slot);

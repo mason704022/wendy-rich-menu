@@ -16,9 +16,9 @@ import {
   buildStudentClassCancelledMessage,
   buildStudentClassOpenedMessage,
 } from "./classOpeningMessages.js";
+import { MIN_CLASS_OPENING } from "./classOpeningConfig.js";
 
-/** 開課門檻：截止預約後正取人數 */
-export const MIN_CLASS_OPENING = 5;
+export { MIN_CLASS_OPENING };
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 

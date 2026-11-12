@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>藏在咖啡廳裡的畫畫課 — 系統功能流程說明</title>
+<style>
+  body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; font-size: 11pt; line-height: 1.5; margin: 2cm; }
+  h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 14pt; margin-top: 18px; color: #1a1a1a; }
+  h3 { font-size: 12pt; margin-top: 12px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+  th, td { border: 1px solid #666; padding: 6px 8px; text-align: left; }
+  th { background: #f0f0f0; }
+  pre { background: #f5f5f5; padding: 10px; font-size: 10pt; white-space: pre-wrap; }
+  .meta { color: #444; margin-bottom: 16px; }
+  ul { margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<h1>藏在咖啡廳裡的畫畫課 — 系統功能流程說明</h1>
+<p class="meta"><strong>文件版本：</strong>依程式庫 master（含會員註冊無簡訊 OTP、LINE ID 欄位、開班文案等）<br />
+<strong>更新日期：</strong>2026-11-08<br />
+<strong>正式網址範例：</strong> https://wendy-rich-menu-production.up.railway.app</p>
+
+<h2>一、系統架構概覽</h2>
+<ul>
+  <li><strong>LINE 官方帳號</strong>：Rich Menu 連結 LIFF 各頁；Webhook 接收 follow / 訊息等事件。</li>
+  <li><strong>LIFF 前端</strong>：課程資訊、購買課程、預約上課、會員資訊；（管理員）後台。</li>
+  <li><strong>Express API</strong>：預約、會員、購課、管理、Webhook。</li>
+  <li><strong>SQLite</strong>：會員、購課、預約、折扣券、開班判定紀錄。</li>
+  <li><strong>Google Sheets（選用）</strong>：會員註冊、預約、匯款同步。</li>
+  <li><strong>背景排程</strong>：開班判定（每 5 分鐘）、課程主題缺漏提醒（每週）。</li>
+</ul>
+
+<h3>Rich Menu 對應路徑（建議）</h3>
+<table>
+  <tr><th>選單</th><th>LIFF 路徑</th></tr>
+  <tr><td>課程資訊</td><td>/courses</td></tr>
+  <tr><td>購買課程</td><td>/purchase</td></tr>
+  <tr><td>預約上課</td><td>/booking</td></tr>
+  <tr><td>會員資訊</td><td>/member</td></tr>
+  <tr><td>管理後台</td><td>/admin（僅管理員 LINE ID）</td></tr>
+</table>
+
+<h2>二、學員端流程</h2>
+
+<h3>2.1 加入好友</h3>
+<ol>
+  <li>使用者加入 LINE 官方帳號為好友。</li>
+  <li>Webhook 收到 follow 事件。</li>
+  <li>系統以 reply 發送歡迎文（welcome-follow.json）。</li>
+  <li>驗證：Webhook Verify 成功；測試帳號重新加好友應收到歡迎訊息。</li>
+</ol>
+
+<h3>2.2 會員註冊</h3>
+<p>入口：購買課程、預約上課、會員資訊 — 未註冊時先顯示註冊表單。</p>
+<table>
+  <tr><th>欄位</th><th>說明</th></tr>
+  <tr><td>LINE ID</td><td>正式環境由 LIFF 自動帶入（唯讀）</td></tr>
+  <tr><td>姓名、年齡、職業、居住地</td><td>必填</td></tr>
+  <tr><td>手機</td><td>必填；已移除簡訊驗證碼</td></tr>
+</table>
+<ul>
+  <li>同一手機不可重複註冊。</li>
+  <li>註冊成功可同步 Google Sheets「會員註冊」。</li>
+</ul>
+
+<h3>2.3 購買課程</h3>
+<ol>
+  <li>選方案（體驗 1 堂、五堂 3900、八堂 5900）。</li>
+  <li>閱讀購課條款、可選折扣券。</li>
+  <li>填匯款資訊 → pending。</li>
+  <li>管理員確認 → 加堂數、LINE 通知學員。</li>
+</ol>
+
+<h3>2.4 預約上課</h3>
+<table>
+  <tr><th>規則</th><th>數值</th></tr>
+  <tr><td>可預約日期</td><td>今日起 7 天</td></tr>
+  <tr><td>正取 / 備取</td><td>10 / 2 人</td></tr>
+  <tr><td>預約／取消截止</td><td>開課前 24 小時</td></tr>
+  <tr><td>開班門檻</td><td>截止後正取 ≥ 4 人</td></tr>
+</table>
+<p>預約成功 LINE <strong>僅通知該學員</strong>。備取不扣堂，遞補正取才扣堂。</p>
+
+<h3>2.5 開班／不開班（自動）</h3>
+<p>通過截止後，每 5 分鐘判定（非滿 4 人即時通知）。</p>
+<ul>
+  <li><strong>滿 4 人</strong>：正取學員開班文；回咖啡／老師飲品統計；管理員同上。</li>
+  <li><strong>未滿 4 人</strong>：學員不開班與退堂；取消預約；通知 staff／管理員。</li>
+</ul>
+
+<h3>2.6 會員資訊</h3>
+<p>剩餘堂數、預約、折扣券；可編輯資料（變更手機無 OTP）。</p>
+
+<h2>三、管理員後台（/admin）</h2>
+<table>
+  <tr><th>分頁</th><th>功能</th></tr>
+  <tr><td>待確認匯款</td><td>確認／拒絕</td></tr>
+  <tr><td>預約名單</td><td>週三／五／六各堂名單</td></tr>
+  <tr><td>課程主題</td><td>每週主題與單堂覆寫</td></tr>
+  <tr><td>折扣券</td><td>模板、指派、刪除</td></tr>
+</table>
+<p>缺主題時每週 LINE 提醒管理員。</p>
+
+<h2>四、LINE 自動訊息一覽</h2>
+<table>
+  <tr><th>觸發</th><th>對象</th><th>摘要</th></tr>
+  <tr><td>加入好友</td><td>新好友</td><td>歡迎文</td></tr>
+  <tr><td>預約成功</td><td>學員</td><td>時段、狀態、飲品</td></tr>
+  <tr><td>購課確認／拒絕</td><td>學員</td><td>匯款結果</td></tr>
+  <tr><td>派券</td><td>學員</td><td>折扣說明</td></tr>
+  <tr><td>截止後開班／不開班</td><td>學員、staff、管理員</td><td>見 2.5</td></tr>
+  <tr><td>缺課程主題</td><td>管理員</td><td>每週提醒</td></tr>
+</table>
+
+<h2>五、內容檔（JSON）</h2>
+<p>courses、plans、purchase-terms、booking-terms、coffee-menu、welcome-follow。Railway Volume 需同步 content。</p>
+
+<h2>六、流程圖（文字版）</h2>
+<pre>加入好友 → 歡迎訊息
+    ↓
+Rich Menu → 課程 / 購買 / 預約 / 會員
+    ↓
+未註冊 → 註冊
+    ↓
+購課 → 管理員確認 → 有堂數
+    ↓
+預約 → 截止後判定 ≥4 人 → 開班或不開班通知</pre>
+
+<h2>七、待確認項目</h2>
+<ul>
+  <li>□ 開班通知在截止後才發送</li>
+  <li>□ 預約成功不通知管理員</li>
+  <li>□ 註冊無簡訊 OTP、LINE ID 自動帶入</li>
+  <li>□ 10 正取 / 2 備取 / 4 人開班 / 7 天 / 24h 截止</li>
+  <li>□ Google Sheets 憑證已設定</li>
+</ul>
+
+<h2>八、技術參考</h2>
+<p>Webhook: POST /webhook/line · API: /api/members, purchases, bookings, admin · GET /health</p>
+
+</body>
+</html>

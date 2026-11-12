@@ -20,6 +20,7 @@ import {
   buildStudentClassOpenedMessage,
 } from "../services/classOpeningMessages.js";
 import { formatLocalDate } from "../utils/localDate.js";
+import { MIN_CLASS_OPENING } from "../services/classOpeningConfig.js";
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -44,7 +45,7 @@ function parseArgs() {
     process.exit(1);
   }
   const manual = getManualClassNotifyRule(slotDate, startTime);
-  const min = minConfirmed > 0 ? minConfirmed : (manual?.minConfirmed ?? 5);
+  const min = minConfirmed > 0 ? minConfirmed : (manual?.minConfirmed ?? MIN_CLASS_OPENING);
   return { slotDate, startTime, minConfirmed: min, apply, force, skipDayCheck };
 }
 

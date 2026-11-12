@@ -1,6 +1,7 @@
 import type { Booking } from "./bookingService.js";
 import { formatCoffeeDisplayName } from "./coffeeMenuService.js";
 import { getMember } from "./memberService.js";
+import { MIN_CLASS_OPENING } from "./classOpeningConfig.js";
 const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 
 const VENUE_LINES = [
@@ -47,10 +48,10 @@ function summarizeDrinkCounts(
     .map(([name, n]) => `・${name}：${n} 杯`);
 }
 
-/** 滿五人 — 學員（正取） */
+/** 達開班門檻 — 學員（正取） */
 export function buildStudentClassOpenedMessage(booking: Booking): string {
   return [
-    "您好！您預約的課程已達 5 人開班標準，確定開班囉！課程日期及時間如下：",
+    `您好！您預約的課程已達 ${MIN_CLASS_OPENING} 人開班標準，確定開班囉！課程日期及時間如下：`,
     "",
     `🗓️ 日期：${formatClassDateLabel(booking.slot_date)}`,
     `🕒 時間：${formatClassTimeLabel(booking.start_time, booking.end_time)}`,
@@ -61,10 +62,10 @@ export function buildStudentClassOpenedMessage(booking: Booking): string {
   ].join("\n");
 }
 
-/** 未滿五人 — 學員 */
+/** 未達開班門檻 — 學員 */
 export function buildStudentClassCancelledMessage(): string {
   return [
-    "您好！因本次課程預約人數未達 5 人開班標準，本次課程將不予開班。",
+    `您好！因本次課程預約人數未達 ${MIN_CLASS_OPENING} 人開班標準，本次課程將不予開班。`,
     "",
     "該堂課程堂數將自動歸還至您的帳戶，不影響原有剩餘堂數。",
     "",
@@ -72,7 +73,7 @@ export function buildStudentClassCancelledMessage(): string {
   ].join("\n");
 }
 
-/** 滿五人 — 老師及回咖啡 */
+/** 達開班門檻 — 老師及回咖啡 */
 export function buildStaffClassOpenedMessage(
   slotDate: string,
   startTime: string,
@@ -111,7 +112,7 @@ export function buildStaffClassOpenedMessage(
   ].join("\n");
 }
 
-/** 未滿五人 — 老師／管理端簡訊 */
+/** 未達開班門檻 — 老師／管理端簡訊 */
 export function buildStaffClassCancelledMessage(
   slotDate: string,
   startTime: string,
@@ -119,7 +120,7 @@ export function buildStaffClassCancelledMessage(
   confirmedCount: number
 ): string {
   return [
-    "您好！因本次課程預約人數未達 5 人開班標準，本次課程將不予開班。",
+    `您好！因本次課程預約人數未達 ${MIN_CLASS_OPENING} 人開班標準，本次課程將不予開班。`,
     "",
     `🗓️ 日期：${formatClassDateLabel(slotDate)}`,
     `🕒 時間：${formatClassTimeLabel(startTime, endTime)}`,

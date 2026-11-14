@@ -11,6 +11,8 @@
     { "id": "latte-ice", "name": "拿鐵（冰）", "description": "" },
     { "id": "mocha-hot", "name": "摩卡咖啡（熱）", "description": "" },
     { "id": "mocha-ice", "name": "摩卡咖啡（冰）", "description": "" },
+    { "id": "chocolate-milk-hot", "name": "巧克力牛奶（熱）", "description": "" },
+    { "id": "chocolate-milk-ice", "name": "巧克力牛奶（冰）", "description": "" },
     { "id": "dirty-coffee", "name": "髒髒咖啡（冰）", "description": "" },
     { "id": "guobao-tea", "name": "國寶茶（熱）", "description": "" },
     { "id": "rose-latte-hot", "name": "玫瑰拿鐵（熱）", "description": "" },

@@ -432,11 +432,11 @@ export function AdminThemesPanel({ adminQuery, lineUserId, onMessage }: Props) {
     <section className="info-card">
       <h2 className="admin-section-title">各週課程內容</h2>
       <p className="slot-meta" style={{ marginBottom: "0.75rem" }}>
-        以週為單位設定後五週課程；同一週的週三、週五、週六共用標題、簡介與圖片。「我要預約」顯示後四週可選時段，會自動套用對應週次內容。
+        以週為單位設定後六週課程；同一週的週三、週五、週六共用標題、簡介與圖片。「我要預約」顯示後四週可選時段，會自動套用對應週次內容。
       </p>
 
       <div className="admin-theme-form" style={{ marginBottom: "0.75rem" }}>
-        <label htmlFor="week-select">選擇週次（後五週）</label>
+        <label htmlFor="week-select">選擇週次（後六週）</label>
         <select
           id="week-select"
           value={selectedWeekStart}

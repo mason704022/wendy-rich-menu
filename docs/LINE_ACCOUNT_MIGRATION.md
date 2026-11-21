@@ -233,7 +233,7 @@ npm run verify-deploy
 - [ ] Webhook Verify 成功
 - [ ] Rich Menu 五格正確
 - [ ] 課程資訊 / 購課 / 預約 / 會員頁
-- [ ] 管理後台課程主題（後五週）
+- [ ] 管理後台課程主題（後六週）
 - [ ] 匯款 → 管理員確認 → 堂數更新
 - [ ] Google Sheets 同步（若啟用）
 - [ ] Redeploy 後上傳圖片仍在（Volume 正常）

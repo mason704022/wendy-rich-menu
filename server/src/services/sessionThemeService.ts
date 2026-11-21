@@ -20,7 +20,7 @@ function themesFile(): string {
 function imagesDir(): string {
   return path.join(getWritableContentRoot(), "images", "sessions");
 }
-export const ADMIN_THEME_WEEK_COUNT = 5;
+export const ADMIN_THEME_WEEK_COUNT = 6;
 
 export interface WeekSessionTheme {
   weekStart: string;

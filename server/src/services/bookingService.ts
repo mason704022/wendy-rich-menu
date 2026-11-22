@@ -3,7 +3,7 @@ import { canBookSlot, canCancelBooking } from "./bookingTimeUtils.js";
 import { formatCoffeeDisplayName, getCoffeeItem } from "./coffeeMenuService.js";
 import { syncBookingToSheetSafe } from "./googleSheetsService.js";
 import { deductSession, getMember, refundSession } from "./memberService.js";
-import { resolveSessionTheme } from "./sessionThemeService.js";
+import { isSlotOfferedForBooking, resolveSessionTheme } from "./sessionThemeService.js";
 import { formatLocalDate, parseLocalDateString } from "../utils/localDate.js";
 import { SLOT_TEMPLATES } from "./slotTemplates.js";
 
@@ -163,7 +163,13 @@ export function getAvailabilityForDate(
 ): SlotAvailability[] {
   const weekday = parseLocalDateString(slotDate).getDay();
 
-  return SLOT_TEMPLATES.filter((t) => t.weekday === weekday).map((template) => {
+  return SLOT_TEMPLATES.filter((t) => t.weekday === weekday)
+    .filter(
+      (template) =>
+        isDisplayOnlyFullSlot(slotDate, template.startTime) ||
+        isSlotOfferedForBooking(slotDate, template.startTime)
+    )
+    .map((template) => {
     const rawConfirmed = countByStatus(slotDate, template.startTime, "confirmed");
     const waitlistCount = countByStatus(slotDate, template.startTime, "waitlist");
     const bookingClosed = !canBookSlot(slotDate, template.startTime);

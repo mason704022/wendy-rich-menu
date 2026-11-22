@@ -3,11 +3,14 @@ import { api } from "../lib/api";
 import { compressImageForUpload } from "../lib/compressImage";
 import { SessionThumb } from "./SessionThumb";
 
+export type SlotBookingEnabled = Partial<Record<3 | 5 | 6, boolean>>;
+
 export interface WeekSessionTheme {
   weekStart: string;
   title: string;
   intro: string;
   image: string;
+  slotBookingEnabled?: SlotBookingEnabled;
 }
 
 export interface SessionThemeOverride {
@@ -44,6 +47,33 @@ interface Props {
   adminQuery: string;
   lineUserId: string;
   onMessage: (msg: { error?: string; success?: string }) => void;
+}
+
+const SLOT_TOGGLE_ROWS: { weekday: 3 | 5 | 6; label: string; time: string }[] = [
+  { weekday: 3, label: "週三", time: "09:00–11:00" },
+  { weekday: 5, label: "週五", time: "19:00–21:00" },
+  { weekday: 6, label: "週六", time: "09:00–11:00" },
+];
+
+function defaultSlotBookingEnabled(): SlotBookingEnabled {
+  return { 3: true, 5: true, 6: true };
+}
+
+function mergeSlotBookingEnabled(stored?: SlotBookingEnabled): SlotBookingEnabled {
+  const base = defaultSlotBookingEnabled();
+  if (!stored) return base;
+  return {
+    3: stored[3] !== false,
+    5: stored[5] !== false,
+    6: stored[6] !== false,
+  };
+}
+
+function weekdayForSlot(slot: AdminWeekSlotRef): 3 | 5 | 6 | null {
+  const row = SLOT_TOGGLE_ROWS.find(
+    (r) => r.label === slot.label && r.time.startsWith(slot.startTime)
+  );
+  return row?.weekday ?? null;
 }
 
 function formatWeekRange(weekStart: string): string {
@@ -89,13 +119,28 @@ function WeeklyEditor({
   const [title, setTitle] = useState(week.title);
   const [intro, setIntro] = useState(week.intro);
   const [image, setImage] = useState(week.image);
+  const [slotBookingEnabled, setSlotBookingEnabled] = useState<SlotBookingEnabled>(
+    () => mergeSlotBookingEnabled(week.slotBookingEnabled)
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setTitle(week.title);
     setIntro(week.intro);
     setImage(week.image);
-  }, [week.weekStart, week.title, week.intro, week.image]);
+    setSlotBookingEnabled(mergeSlotBookingEnabled(week.slotBookingEnabled));
+  }, [week.weekStart, week.title, week.intro, week.image, week.slotBookingEnabled]);
+
+  function buildSaveBody(extra?: { image?: string }) {
+    return {
+      weekStart: week.weekStart,
+      title,
+      intro,
+      image: extra?.image ?? image,
+      lineUserId,
+      slotBookingEnabled,
+    };
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -103,13 +148,7 @@ function WeeklyEditor({
     try {
       await api(`/admin/session-themes/weekly?${adminQuery}`, {
         method: "PUT",
-        body: JSON.stringify({
-          weekStart: week.weekStart,
-          title,
-          intro,
-          image,
-          lineUserId,
-        }),
+        body: JSON.stringify(buildSaveBody()),
       });
       onMessage({ success: `已儲存 ${formatWeekRange(week.weekStart)} 課程` });
       onSaved();
@@ -130,13 +169,7 @@ function WeeklyEditor({
       setImage(imageUrl);
       await api(`/admin/session-themes/weekly?${adminQuery}`, {
         method: "PUT",
-        body: JSON.stringify({
-          weekStart: week.weekStart,
-          title,
-          intro,
-          image: imageUrl,
-          lineUserId,
-        }),
+        body: JSON.stringify(buildSaveBody({ image: imageUrl })),
       });
       onMessage({ success: "圖片已上傳並儲存" });
       onSaved();
@@ -152,17 +185,55 @@ function WeeklyEditor({
     <div className="slot-card admin-theme-card">
       <p className="slot-meta">
         {isCurrentWeek ? "本週 · " : ""}
-        {formatWeekRange(week.weekStart)} · 週三、五、六共用
+        {formatWeekRange(week.weekStart)} · 內容週三、五、六共用，預約可個別開關
       </p>
       {bookableSlots.length > 0 && (
         <ul className="admin-bookable-slots">
-          {bookableSlots.map((slot) => (
-            <li key={`${slot.slotDate}-${slot.startTime}`}>{slot.display}</li>
-          ))}
+          {bookableSlots.map((slot) => {
+            const wd = weekdayForSlot(slot);
+            const enabled = wd != null ? slotBookingEnabled[wd] !== false : true;
+            return (
+              <li
+                key={`${slot.slotDate}-${slot.startTime}`}
+                className={enabled ? undefined : "admin-slot-disabled"}
+              >
+                {slot.display}
+                <span className="admin-slot-badge">
+                  {enabled ? "開放預約" : "不開放預約"}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
+      <fieldset className="admin-slot-toggle-fieldset">
+        <legend className="admin-slot-toggle-legend">開放預約</legend>
+        <p className="slot-meta">
+          關閉後，學員在可訂日期內不會看到該堂。不影響已預約名單；特別班不受此開關影響。
+        </p>
+        {SLOT_TOGGLE_ROWS.map((row) => (
+          <label key={row.weekday} className="admin-slot-toggle-row">
+            <span className="admin-slot-toggle-label">
+              {row.label} {row.time}
+            </span>
+            <input
+              type="checkbox"
+              checked={slotBookingEnabled[row.weekday] !== false}
+              onChange={(e) =>
+                setSlotBookingEnabled((prev) => ({
+                  ...prev,
+                  [row.weekday]: e.target.checked,
+                }))
+              }
+            />
+            <span className="slot-meta">
+              {slotBookingEnabled[row.weekday] !== false ? "開啟" : "關閉"}
+            </span>
+          </label>
+        ))}
+      </fieldset>
       <p className="slot-meta" style={{ marginBottom: "12px" }}>
-        此週課程套用於以上週三／週五／週六時段（含「我要預約」後續出現的場次）。
+        標題、簡介、圖片套用於本週仍「開放預約」的週三／週五／週六（含日後進入訂課窗口的場次）。
       </p>
       <div className="admin-theme-preview">
         {image ? <SessionThumb src={image} className="slot-thumb" /> : null}
@@ -432,7 +503,7 @@ export function AdminThemesPanel({ adminQuery, lineUserId, onMessage }: Props) {
     <section className="info-card">
       <h2 className="admin-section-title">各週課程內容</h2>
       <p className="slot-meta" style={{ marginBottom: "0.75rem" }}>
-        以週為單位設定後六週課程；同一週的週三、週五、週六共用標題、簡介與圖片。「我要預約」顯示後四週可選時段，會自動套用對應週次內容。
+        以週為單位設定後六週課程；同一週共用標題、簡介與圖片，並可個別關閉週三／週五／週六是否開放預約。學員僅能在訂課窗口內看到「開放」的時段。
       </p>
 
       <div className="admin-theme-form" style={{ marginBottom: "0.75rem" }}>

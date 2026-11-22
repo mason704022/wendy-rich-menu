@@ -131,11 +131,19 @@ adminRouter.get("/session-themes", (_req, res) => {
 });
 
 adminRouter.put("/session-themes/weekly", (req, res) => {
+  const slotBookingEnabledSchema = z
+    .object({
+      "3": z.boolean().optional(),
+      "5": z.boolean().optional(),
+      "6": z.boolean().optional(),
+    })
+    .optional();
   const schema = z.object({
     weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     title: z.string().min(1).max(80),
     intro: z.string().min(1).max(200),
     image: z.string().optional(),
+    slotBookingEnabled: slotBookingEnabledSchema,
   });
   const parsed = schema.safeParse(req.body ?? {});
   if (!parsed.success) {

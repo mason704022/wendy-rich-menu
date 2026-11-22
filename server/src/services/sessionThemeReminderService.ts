@@ -5,6 +5,7 @@ import { listBookableWeeksInWindow } from "./bookingWindow.js";
 import {
   formatWeekRangeLabel,
   getSessionThemes,
+  isSlotOfferedForBooking,
 } from "./sessionThemeService.js";
 
 const REMINDER_KEY = "theme_upload_reminder_last_sent";
@@ -34,7 +35,12 @@ function listWeekStartsMissingTheme(): string[] {
   const bookable = listBookableWeeksInWindow();
   const missing: string[] = [];
 
-  for (const { weekStart } of bookable) {
+  for (const { weekStart, slots } of bookable) {
+    const hasOfferedSlot = slots.some((s) =>
+      isSlotOfferedForBooking(s.slotDate, s.startTime)
+    );
+    if (!hasOfferedSlot) continue;
+
     const theme = weeks.find((w) => w.weekStart === weekStart);
     const hasContent = Boolean(
       theme && (theme.title.trim() || theme.intro.trim() || theme.image.trim())

@@ -22,11 +22,15 @@ function imagesDir(): string {
 }
 export const ADMIN_THEME_WEEK_COUNT = 6;
 
+/** 週三=3、週五=5、週六=6；未設定或 true = 開放預約 */
+export type SlotBookingEnabled = Partial<Record<3 | 5 | 6, boolean>>;
+
 export interface WeekSessionTheme {
   weekStart: string;
   title: string;
   intro: string;
   image: string;
+  slotBookingEnabled?: SlotBookingEnabled;
 }
 
 export interface SessionThemeOverride {
@@ -144,6 +148,39 @@ function emptyWeekTheme(weekStart: string): WeekSessionTheme {
   return { weekStart, title: "", intro: "", image: "" };
 }
 
+function parseSlotBookingEnabled(raw: unknown): SlotBookingEnabled | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const obj = raw as Record<string, unknown>;
+  const out: SlotBookingEnabled = {};
+  for (const wd of [3, 5, 6] as const) {
+    const v = obj[String(wd)];
+    if (v === false) out[wd] = false;
+    else if (v === true) out[wd] = true;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+export function isWeekdayBookingEnabled(
+  slotBookingEnabled: SlotBookingEnabled | undefined,
+  weekday: number
+): boolean {
+  if (weekday !== 3 && weekday !== 5 && weekday !== 6) return true;
+  return slotBookingEnabled?.[weekday as 3 | 5 | 6] !== false;
+}
+
+/** 該堂是否在學員可預約列表中顯示（不影響特別班覆寫文案、不處理滿班特例） */
+export function isSlotOfferedForBooking(slotDate: string, startTime: string): boolean {
+  const weekday = parseLocalDateString(slotDate).getDay();
+  const template = SLOT_TEMPLATES.find(
+    (t) => t.weekday === weekday && t.startTime === startTime
+  );
+  if (!template) return false;
+
+  const weekStart = getWeekStart(slotDate);
+  const theme = findWeekTheme(getSessionThemes().weeks, weekStart);
+  return isWeekdayBookingEnabled(theme?.slotBookingEnabled, weekday);
+}
+
 function hasThemeContent(theme: Pick<WeekSessionTheme, "title" | "intro" | "image">): boolean {
   return Boolean(theme.title || theme.intro || theme.image);
 }
@@ -162,6 +199,9 @@ function migrateLegacyData(raw: unknown): SessionThemesData {
         title: w.title ?? "",
         intro: w.intro ?? "",
         image: w.image ?? "",
+        slotBookingEnabled: parseSlotBookingEnabled(
+          (w as WeekSessionTheme).slotBookingEnabled
+        ),
       })),
       overrides: Array.isArray(obj.overrides)
         ? (obj.overrides as SessionThemeOverride[])
@@ -280,7 +320,12 @@ export function listWeekThemesForAdmin(): WeekSessionTheme[] {
 
 export function updateWeekSessionTheme(
   weekStart: string,
-  patch: { title: string; intro: string; image?: string }
+  patch: {
+    title: string;
+    intro: string;
+    image?: string;
+    slotBookingEnabled?: SlotBookingEnabled;
+  }
 ): WeekSessionTheme {
   if (getWeekStart(weekStart) !== weekStart) {
     throw new Error("INVALID_WEEK_START");
@@ -293,11 +338,16 @@ export function updateWeekSessionTheme(
 
   const data = getSessionThemes();
   const index = data.weeks.findIndex((w) => w.weekStart === weekStart);
+  const prior = index >= 0 ? data.weeks[index] : undefined;
   const updated: WeekSessionTheme = {
     weekStart,
     title: patch.title,
     intro: patch.intro,
-    image: patch.image ?? (index >= 0 ? data.weeks[index].image : ""),
+    image: patch.image ?? prior?.image ?? "",
+    slotBookingEnabled:
+      patch.slotBookingEnabled !== undefined
+        ? patch.slotBookingEnabled
+        : prior?.slotBookingEnabled,
   };
 
   if (index === -1) {

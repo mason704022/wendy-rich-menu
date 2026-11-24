@@ -223,8 +223,8 @@ export function getAvailabilityRange(
   lineUserId?: string
 ): SlotAvailability[] {
   const results: SlotAvailability[] = [];
-  const start = new Date(`${fromDate}T00:00:00`);
-  const end = new Date(`${toDate}T00:00:00`);
+  const start = parseLocalDateString(fromDate);
+  const end = parseLocalDateString(toDate);
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const iso = formatLocalDate(d);

@@ -19,7 +19,13 @@ export function getWeekStart(dateStr: string): string {
 }
 
 export function todayIsoLocal(): string {
-  return formatLocalDate(new Date());
+  // 與開課／排程一致：以台北日曆日為「今日」
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 export function addDaysLocal(dateStr: string, days: number): string {

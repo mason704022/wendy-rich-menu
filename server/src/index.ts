@@ -14,6 +14,7 @@ import { registerLineWebhook } from "./webhook/line.js";
 import { startClassOpeningScheduler } from "./services/classOpeningService.js";
 import { startSessionThemeReminderScheduler } from "./services/sessionThemeReminderService.js";
 import { startScheduledClassNotifyScheduler } from "./services/scheduledClassNotifyService.js";
+import { startBookingReleaseScheduler } from "./services/bookingReleaseScheduler.js";
 import { seedWritableContentIfNeeded } from "./services/contentSeedService.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,7 @@ seedWritableContentIfNeeded();
 startClassOpeningScheduler();
 startSessionThemeReminderScheduler();
 startScheduledClassNotifyScheduler();
+startBookingReleaseScheduler();
 
 const app = express();
 

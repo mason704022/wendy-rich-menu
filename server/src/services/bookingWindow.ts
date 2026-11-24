@@ -6,13 +6,26 @@ import {
   parseLocalDateString,
   todayIsoLocal,
 } from "../utils/localDate.js";
+import { getReleasedThroughWeekStart } from "./bookingReleaseService.js";
 import { SLOT_TEMPLATES } from "./slotTemplates.js";
 
+/** 未啟用預約放行前的滾動天數 */
 export const BOOKING_WINDOW_DAYS = 7;
 
 export function getBookingWindow(): { from: string; to: string } {
   const from = todayIsoLocal();
+  const releasedThrough = getReleasedThroughWeekStart();
+  if (releasedThrough) {
+    return { from, to: addDaysLocal(releasedThrough, 6) };
+  }
   return { from, to: addDaysLocal(from, BOOKING_WINDOW_DAYS) };
+}
+
+export function getBookingWindowSpanDays(): number {
+  const { from, to } = getBookingWindow();
+  const start = parseLocalDateString(from);
+  const end = parseLocalDateString(to);
+  return Math.round((end.getTime() - start.getTime()) / 86400000);
 }
 
 export interface BookableSlotRef {

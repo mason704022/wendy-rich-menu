@@ -67,7 +67,7 @@ export async function sendThemeUploadReminderIfDue(): Promise<boolean> {
   await notifyAdmin(
     [
       "【系統】每週課程內容提醒",
-      "以下「目前已開放預約」的週次尚未上傳課程（標題／簡介／圖片至少填一項）：",
+      "以下「一週內可預約」的週次尚未上傳課程（標題／簡介／圖片至少填一項）：",
       "",
       ...lines,
       "",

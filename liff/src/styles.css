@@ -424,6 +424,10 @@ body {
   margin-top: 8px;
 }
 
+.sheet-list-booking-terms li::before {
+  content: "· ";
+}
+
 .btn-purple {
   background: var(--purple);
   color: var(--white);

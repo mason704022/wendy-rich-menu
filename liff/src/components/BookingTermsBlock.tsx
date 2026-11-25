@@ -13,7 +13,7 @@ export function BookingTermsBlock({ terms }: Props) {
           {line}
         </p>
       ))}
-      <ul className="sheet-list">
+      <ul className="sheet-list sheet-list-booking-terms">
         {terms.sections.map((s) => (
           <li key={s}>{s}</li>
         ))}

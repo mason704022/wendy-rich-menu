@@ -20,7 +20,7 @@ function themesFile(): string {
 function imagesDir(): string {
   return path.join(getWritableContentRoot(), "images", "sessions");
 }
-export const ADMIN_THEME_WEEK_COUNT = 6;
+export const ADMIN_THEME_WEEK_COUNT = 8;
 
 /** 週三=3、週五=5、週六=6；未設定或 true = 開放預約 */
 export type SlotBookingEnabled = Partial<Record<3 | 5 | 6, boolean>>;

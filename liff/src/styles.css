@@ -443,6 +443,18 @@ body {
   opacity: 1;
 }
 
+.btn-booked-muted {
+  background: #e8e8e8;
+  color: #6b6b6b;
+  cursor: default;
+}
+
+.btn-booked-muted:disabled {
+  background: #e8e8e8;
+  color: #6b6b6b;
+  opacity: 1;
+}
+
 .btn-lg {
   padding: 16px;
   font-size: 1.05rem;

@@ -70,7 +70,7 @@ export function BookingPage() {
     ).then(({ a, b }) => {
       setSlots(
         a.slots.filter((s) => {
-          if (s.alreadyBooked) return false;
+          if (s.alreadyBooked) return true;
           if (s.displayOnlyFull) return true;
           if (s.canBookConfirmed || s.canBookWaitlist) return true;
           // 正取滿班仍顯示（按鈕反灰），其餘已截止／無法預約的不列出
@@ -119,6 +119,7 @@ export function BookingPage() {
   }, [registered, loadInitialData]);
 
   function openCoffeePicker(slot: Slot) {
+    if (slot.alreadyBooked) return;
     setError("");
     const noSessions = (remainingSessions ?? 0) <= 0;
     if (noSessions && slot.canBookConfirmed) {
@@ -129,12 +130,14 @@ export function BookingPage() {
   }
 
   function slotCanBook(slot: Slot): boolean {
+    if (slot.alreadyBooked) return false;
     if (slot.displayOnlyFull) return false;
     const hasSessions = (remainingSessions ?? 0) > 0;
     return (slot.canBookConfirmed && hasSessions) || slot.canBookWaitlist;
   }
 
   function slotButtonLabel(slot: Slot): string {
+    if (slot.alreadyBooked) return "已預約";
     if (slot.displayOnlyFull) return "正取已滿班";
     if (slot.bookingClosed) return "已截止預約";
     if (slot.canBookConfirmed && (remainingSessions ?? 0) <= 0) {
@@ -299,7 +302,7 @@ export function BookingPage() {
               </div>
             </div>
             <button
-              className="btn btn-purple"
+              className={`btn ${slot.alreadyBooked ? "btn-booked-muted" : "btn-purple"}`}
               disabled={!canBook}
               onClick={() => openCoffeePicker(slot)}
             >
